@@ -29,6 +29,20 @@ pub struct StreamCmd {
     pub time_spec_frac_secs:f64		// If not now, then fractional seconds into future to stream
 }
 
+impl StreamCmd {
+
+	pub fn start_continuous_now() -> Self { Self {
+	    stream_mode:StreamMode::StartContinuous, num_samps: 0,
+	    stream_now: true, time_spec_full_secs: 0, time_spec_frac_secs: 0.0
+	}}
+	
+	pub fn stop_continuous_now() -> Self { Self {
+	    stream_mode:StreamMode::StopContinuous, num_samps: 0,
+	    stream_now: true, time_spec_full_secs: 0, time_spec_frac_secs: 0.0
+	}}
+	
+}
+
 #[link(name = "uhd")]
 extern {
 

@@ -83,7 +83,7 @@ fn main() -> Result<(), &'static str> {
 	let (bytes_per_sample, mut rx_streamer) = match file_fmt {
 		Some("sc16") => (4, usrp.get_rx_stream::<i16, i16>("")?),
 		Some("fc32") => (8, usrp.get_rx_stream::<i16, f32>("")?),
-		x => return Err("Unrecognized file format")
+		_ => return Err("Unrecognized file format")
 	};
 
 	let mut outfile = {
@@ -93,16 +93,11 @@ fn main() -> Result<(), &'static str> {
 		std::fs::File::create(name).unwrap()
 	};
 
-	// Create stream_cmd
-	let stream_cmd = StreamCmd {
-	    stream_mode:StreamMode::NumSampsAndDone,
-	    num_samps: n_samples,
-	    stream_now:true,
-	    time_spec_full_secs:0,
-	    time_spec_frac_secs:0.0
-	};
+	// Create stream_cmds
+	let stream_cmd_start = StreamCmd::start_continuous_now();
+	let stream_cmd_stop  = StreamCmd::stop_continuous_now();
 
-	rx_streamer.stream(&stream_cmd)?;
+	rx_streamer.stream(&stream_cmd_start)?;
 
 	let mut total_samps:usize = 0;
 
@@ -117,6 +112,8 @@ fn main() -> Result<(), &'static str> {
 			total_samps += num_samps;
 		}
 	}
+
+	rx_streamer.stream(&stream_cmd_stop)?;
 
 	let (full_secs, frac_secs) = rx_streamer.rx_metadata_time_spec()?;
 	eprintln!("Last received packet time: {} full secs, {} frac secs", full_secs, frac_secs);
