@@ -1,13 +1,10 @@
 
-use std::io::Write;
+use std::f64::consts::PI;
 use std::ffi::CString;
 
 use clap::{Arg, App};
 
-use uhd_rs::ffi::types::{TuneRequest, TuneRequestPolicy, TuneResult};
-use uhd_rs::ffi::usrp::{StreamArgs, StreamCmd, StreamMode};
-use uhd_rs::rx_streamer::RxStreamer;
-use uhd_rs::types::metadata::RxMetadata;
+use uhd_rs::ffi::types::{TuneRequest, TuneRequestPolicy};
 use uhd_rs::usrp::USRP;
 
 fn main() -> Result<(), &'static str> {
@@ -15,17 +12,7 @@ fn main() -> Result<(), &'static str> {
 	let matches = App::new("Tx Example for UHD_rs")
 		.version("0.1.0")
 		.author("John Stanford (johnwstanford@gmail.com)")
-		.about("Reads raw IQ samples from a file and transmits over UHD")
-		.arg(Arg::with_name("filename")
-			.short("f").long("filename")
-			.help("Output filename")
-			.required(false).takes_value(true))
-		.arg(Arg::with_name("file_format")
-			.long("format")
-			.takes_value(true)
-			.default_value("sc16")
-			.possible_value("sc16")
-			.possible_value("fc32"))
+		.about("Transmits a simple FM sine waveform over UHD")
 		.arg(Arg::with_name("sample_rate_sps")
 			.short("s").long("sample_rate_sps")
 			.takes_value(true).required(true))
@@ -35,11 +22,25 @@ fn main() -> Result<(), &'static str> {
 		.arg(Arg::with_name("gain_db")
 			.long("gain_db")
 			.takes_value(true).required(true))
+		.arg(Arg::with_name("fm_freq_hz")
+			.long("fm_freq_hz")
+			.takes_value(true).required(true))
+		.arg(Arg::with_name("fm_width_hz")
+			.long("fm_width_hz")
+			.takes_value(true).required(true))
+		.arg(Arg::with_name("time_sec")
+			.long("time_sec")
+			.takes_value(true).required(true))
 		.get_matches();
 
 	let freq:f64 = matches.value_of("freq_hz").unwrap().parse().unwrap();
 	let rate:f64 = matches.value_of("sample_rate_sps").unwrap().parse().unwrap();
 	let gain:f64 = matches.value_of("gain_db").unwrap().parse().unwrap();
+
+	let mod_freq_hz:f64  = matches.value_of("fm_freq_hz").unwrap().parse().unwrap();
+	let mod_width_hz:f64 = matches.value_of("fm_width_hz").unwrap().parse().unwrap();
+	let time_sec:f64     = matches.value_of("time_sec").unwrap().parse().unwrap();
+	let num_samps:usize  = (rate*time_sec) as usize;
 
 	let channel = 0;
 
@@ -72,44 +73,32 @@ fn main() -> Result<(), &'static str> {
 	println!("Actual TX frequency: {:.3} [MHz]...", usrp.get_tx_freq(channel)? / 1.0e6);
 
 	// Create stream
-	let file_fmt:Option<&str> = matches.value_of("file_format");
-	let (bytes_per_sample, mut tx_streamer) = match file_fmt {
-		Some("sc16") => (4, usrp.get_tx_stream::<i16, i16>("")?),
-		Some("fc32") => (8, usrp.get_tx_stream::<i16, f32>("")?),
-		_ => return Err("Unrecognized file format")
-	};
+	let mut tx_streamer = usrp.get_tx_stream::<i16, i16>("")?;
+	let mut buffer:[(i16, i16); 1024] = [(0, 0); 1024];
 
-	/*let mut outfile = {
-		let name = matches.value_of("filename")
-			.map(|s| s.to_owned())
-			.unwrap_or(format!("output_{:.2}MHz_{:.1}Msps_gain{:.1}dB_{}.dat", freq/1.0e6, rate/1.0e6, gain, file_fmt.unwrap()));
-		std::fs::File::create(name).unwrap()
-	};
+	// Set up waveform
+	let mut phase:f64 = 0.0;
+	let mut t:f64 = 0.0;
+	let dt:f64 = 1.0 / rate;
+	let mod_freq_rad_per_sec:f64  = mod_freq_hz * 2.0 * PI;
+	let mod_width_rad_per_sec:f64 = mod_width_hz * 2.0 * PI;
 
-	// Create stream_cmds
-	let stream_cmd_start = StreamCmd::start_continuous_now();
-	let stream_cmd_stop  = StreamCmd::stop_continuous_now();
+	let mut samps_sent:usize = 0;
 
-	rx_streamer.stream(&stream_cmd_start)?;
+	while samps_sent < num_samps {
+		let omega:f64 = mod_width_rad_per_sec * (mod_freq_rad_per_sec*t).cos();
 
-	let mut total_samps:usize = 0;
+		t += dt*(buffer.len() as f64);
 
-	while total_samps < n_samples {
-		let num_samps = rx_streamer.recv(false)?;
-		rx_streamer.rx_metadata_ok()?;
-
-		if num_samps > 0 {
-
-			outfile.write(&rx_streamer.buffer[..(num_samps*bytes_per_sample)]).unwrap();
-
-			total_samps += num_samps;
+		for i in 0..buffer.len() {
+			buffer[i] = ((phase.cos()*32768.0) as i16, (phase.sin()*32768.0) as i16);
+			phase += dt*omega;
 		}
+
+		tx_streamer.send_sc16(&buffer)?;
+		samps_sent += buffer.len();
 	}
 
-	rx_streamer.stream(&stream_cmd_stop)?;
-
-	let (full_secs, frac_secs) = rx_streamer.rx_metadata_time_spec()?;
-	eprintln!("Last received packet time: {} full secs, {} frac secs", full_secs, frac_secs);*/
 
  	Ok(())
 }

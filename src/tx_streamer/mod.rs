@@ -38,7 +38,7 @@ impl TxStreamer {
 		}
 	}
 
-	pub fn send(&mut self, buffer:&[u8]) -> Result<usize, &'static str> {
+	pub fn send_sc16(&mut self, buffer:&[(i16, i16)]) -> Result<usize, &'static str> {
 		if buffer.len() > self.max_num_samps {
 			Err("Supplied slice is too large")
 		} else {

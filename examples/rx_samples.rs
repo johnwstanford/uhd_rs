@@ -4,10 +4,8 @@ use std::ffi::CString;
 
 use clap::{Arg, App};
 
-use uhd_rs::ffi::types::{TuneRequest, TuneRequestPolicy, TuneResult};
-use uhd_rs::ffi::usrp::{StreamArgs, StreamCmd, StreamMode};
-use uhd_rs::rx_streamer::RxStreamer;
-use uhd_rs::types::metadata::RxMetadata;
+use uhd_rs::ffi::types::{TuneRequest, TuneRequestPolicy};
+use uhd_rs::ffi::usrp::StreamCmd;
 use uhd_rs::usrp::USRP;
 
 fn main() -> Result<(), &'static str> {
