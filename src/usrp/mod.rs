@@ -101,11 +101,27 @@ impl USRP {
 		}
 	}
 
+	pub fn set_tx_freq(&mut self, tune_request:&TuneRequest, chan:usize) -> Result<TuneResult, &'static str> {
+		let mut tune_result:TuneResult = TuneResult::default();
+		match unsafe { crate::ffi::usrp::uhd_usrp_set_tx_freq(self.handle, tune_request, chan, &mut tune_result) } {
+			0 => Ok(tune_result),
+			_ => Err("Unable to set TX freq")
+		}
+	}
+
 	pub fn get_rx_freq(&self, chan:usize) -> Result<f64, &'static str> {
 		let mut freq_out:f64 = 0.0;
 		match unsafe { crate::ffi::usrp::uhd_usrp_get_rx_freq(self.handle, chan, &mut freq_out) } {
 			0 => Ok(freq_out),
 			_ => Err("Unable to get RX freq")
+		}
+	}
+
+	pub fn get_tx_freq(&self, chan:usize) -> Result<f64, &'static str> {
+		let mut freq_out:f64 = 0.0;
+		match unsafe { crate::ffi::usrp::uhd_usrp_get_tx_freq(self.handle, chan, &mut freq_out) } {
+			0 => Ok(freq_out),
+			_ => Err("Unable to get TX freq")
 		}
 	}
 

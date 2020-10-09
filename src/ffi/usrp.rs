@@ -182,8 +182,13 @@ extern {
 	pub fn uhd_usrp_get_tx_rate(h:usize, chan:size_t, rate_out:&mut f64) -> isize;
 
 	// uhd_error uhd_usrp_get_tx_rates(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle rates_out)
+	
 	// uhd_error uhd_usrp_set_tx_freq(uhd_usrp_handle h, uhd_tune_request_t *tune_request, size_t chan, uhd_tune_result_t *tune_result)
+	pub fn uhd_usrp_set_tx_freq(h:usize, tune_request:&TuneRequest, chan:size_t, tune_result:&mut TuneResult) -> isize;
+
 	// uhd_error uhd_usrp_get_tx_freq(uhd_usrp_handle h, size_t chan, double *freq_out)
+	pub fn uhd_usrp_get_tx_freq(h:usize, chan:size_t, freq_out:&mut f64) -> isize;
+	
 	// uhd_error uhd_usrp_get_tx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
 	// uhd_error uhd_usrp_get_fe_tx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
 	// uhd_error uhd_usrp_get_tx_lo_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *tx_lo_names_out)

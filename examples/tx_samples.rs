@@ -47,14 +47,14 @@ fn main() -> Result<(), &'static str> {
 
 	let mut usrp = USRP::new("")?;
 
-	/*let tune_request = TuneRequest {
+	let tune_request = TuneRequest {
 	    target_freq:    freq,						// Target frequency for RF chain in Hz
 	    rf_freq_policy: TuneRequestPolicy::Auto, 	// RF frequency policy
 	    rf_freq: 		0.0,						// RF frequency in Hz
 	    dsp_freq_policy:TuneRequestPolicy::Auto, 	// DSP frequency policy
 	    dsp_freq:		0.0,						// DSP frequency in Hz
 	    args:args.as_ptr()							// Key-value pairs delimited by commas		
-	};*/
+	};
 
 	println!("Setting TX rate: {:.2e}...", rate);
 	usrp.set_tx_rate(rate, channel)?;
@@ -66,13 +66,13 @@ fn main() -> Result<(), &'static str> {
 
 	println!("Actual TX Gain: {:.2} dB...", usrp.get_tx_gain(channel, "")?);
 
-	/*println!("Setting RX frequency: {:.3} [MHz]...", tune_request.target_freq / 1.0e6);
-	let _tune_result = usrp.set_rx_freq(&tune_request, channel)?;
+	println!("Setting TX frequency: {:.3} [MHz]...", tune_request.target_freq / 1.0e6);
+	let _tune_result = usrp.set_tx_freq(&tune_request, channel)?;
 
-	println!("Actual RX frequency: {:.3} [MHz]...", usrp.get_rx_freq(channel)? / 1.0e6);
+	println!("Actual TX frequency: {:.3} [MHz]...", usrp.get_tx_freq(channel)? / 1.0e6);
 
 	// Create stream
-	let file_fmt:Option<&str> = matches.value_of("file_format");
+	/*let file_fmt:Option<&str> = matches.value_of("file_format");
 	let (bytes_per_sample, mut rx_streamer) = match file_fmt {
 		Some("sc16") => (4, usrp.get_rx_stream::<i16, i16>("")?),
 		Some("fc32") => (8, usrp.get_rx_stream::<i16, f32>("")?),
