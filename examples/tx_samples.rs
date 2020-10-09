@@ -54,14 +54,14 @@ fn main() -> Result<(), &'static str> {
 	    dsp_freq_policy:TuneRequestPolicy::Auto, 	// DSP frequency policy
 	    dsp_freq:		0.0,						// DSP frequency in Hz
 	    args:args.as_ptr()							// Key-value pairs delimited by commas		
-	};
+	};*/
 
-	println!("Setting RX rate: {:.2e}...", rate);
-	usrp.set_rx_rate(rate, channel)?;
+	println!("Setting TX rate: {:.2e}...", rate);
+	usrp.set_tx_rate(rate, channel)?;
 
-	println!("Actual RX rate: {:.2e}...", usrp.get_rx_rate(channel)?);
+	println!("Actual TX rate: {:.2e}...", usrp.get_tx_rate(channel)?);
 
-	println!("Setting RX gain: {:.2} [dB]...", gain);
+	/*println!("Setting RX gain: {:.2} [dB]...", gain);
 	usrp.set_rx_gain(gain, channel, "")?;
 
 	println!("Actual RX Gain: {:.2} dB...", usrp.get_rx_gain(channel, "")?);
