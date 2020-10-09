@@ -194,10 +194,16 @@ extern {
 	// uhd_error uhd_usrp_get_tx_lo_export_enabled(uhd_usrp_handle h, const char* name, size_t chan, bool* result_out)
 	// uhd_error uhd_usrp_set_tx_lo_freq(uhd_usrp_handle h, double freq, const char* name, size_t chan, double* coerced_freq_out)
 	// uhd_error uhd_usrp_get_tx_lo_freq(uhd_usrp_handle h, const char* name, size_t chan, double* tx_lo_freq_out)
+	
 	// uhd_error uhd_usrp_set_tx_gain(uhd_usrp_handle h, double gain, size_t chan, const char *gain_name)
+	pub fn uhd_usrp_set_tx_gain(h:usize, gain:f64, chan:size_t, gain_name:*const c_char) -> isize;
+	
 	// uhd_error uhd_usrp_set_normalized_tx_gain(uhd_usrp_handle h, double gain, size_t chan)
 	// uhd_error uhd_usrp_get_tx_gain_range(uhd_usrp_handle h, const char* name, size_t chan, uhd_meta_range_handle gain_range_out)
+	
 	// uhd_error uhd_usrp_get_tx_gain(uhd_usrp_handle h, size_t chan, const char *gain_name, double *gain_out)
+	pub fn uhd_usrp_get_tx_gain(h:usize, chan:size_t, gain_name:*const c_char, gain_out:&mut f64) -> isize;
+	
 	// uhd_error uhd_usrp_get_normalized_tx_gain(uhd_usrp_handle h, size_t chan, double *gain_out)
 	// uhd_error uhd_usrp_get_tx_gain_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *gain_names_out)
 	// uhd_error uhd_usrp_set_tx_antenna(uhd_usrp_handle h, const char* ant, size_t chan)

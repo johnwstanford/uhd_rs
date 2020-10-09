@@ -61,12 +61,12 @@ fn main() -> Result<(), &'static str> {
 
 	println!("Actual TX rate: {:.2e}...", usrp.get_tx_rate(channel)?);
 
-	/*println!("Setting RX gain: {:.2} [dB]...", gain);
-	usrp.set_rx_gain(gain, channel, "")?;
+	println!("Setting TX gain: {:.2} [dB]...", gain);
+	usrp.set_tx_gain(gain, channel, "")?;
 
-	println!("Actual RX Gain: {:.2} dB...", usrp.get_rx_gain(channel, "")?);
+	println!("Actual TX Gain: {:.2} dB...", usrp.get_tx_gain(channel, "")?);
 
-	println!("Setting RX frequency: {:.3} [MHz]...", tune_request.target_freq / 1.0e6);
+	/*println!("Setting RX frequency: {:.3} [MHz]...", tune_request.target_freq / 1.0e6);
 	let _tune_result = usrp.set_rx_freq(&tune_request, channel)?;
 
 	println!("Actual RX frequency: {:.3} [MHz]...", usrp.get_rx_freq(channel)? / 1.0e6);

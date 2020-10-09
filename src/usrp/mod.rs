@@ -67,12 +67,29 @@ impl USRP {
 		}
 	}
 
+	pub fn set_tx_gain(&mut self, gain:f64, chan:usize, gain_name:&str) -> Result<(), &'static str> {
+		let gain_name_c:CString = CString::new(gain_name).unwrap();
+		match unsafe { crate::ffi::usrp::uhd_usrp_set_tx_gain(self.handle, gain, chan, gain_name_c.as_ptr()) } {
+			0 => Ok(()),
+			_ => Err("Unable to set TX gain")
+		}
+	}
+
 	pub fn get_rx_gain(&self, chan:usize, gain_name:&str) -> Result<f64, &'static str> {
 		let gain_name_c:CString = CString::new(gain_name).unwrap();
 		let mut gain_out:f64 = 0.0;
 		match unsafe { crate::ffi::usrp::uhd_usrp_get_rx_gain(self.handle, chan, gain_name_c.as_ptr(), &mut gain_out) } {
 			0 => Ok(gain_out),
 			_ => Err("Unable to get RX gain")
+		}
+	}
+
+	pub fn get_tx_gain(&self, chan:usize, gain_name:&str) -> Result<f64, &'static str> {
+		let gain_name_c:CString = CString::new(gain_name).unwrap();
+		let mut gain_out:f64 = 0.0;
+		match unsafe { crate::ffi::usrp::uhd_usrp_get_tx_gain(self.handle, chan, gain_name_c.as_ptr(), &mut gain_out) } {
+			0 => Ok(gain_out),
+			_ => Err("Unable to get TX gain")
 		}
 	}
 
