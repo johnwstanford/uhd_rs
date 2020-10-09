@@ -72,14 +72,14 @@ fn main() -> Result<(), &'static str> {
 	println!("Actual TX frequency: {:.3} [MHz]...", usrp.get_tx_freq(channel)? / 1.0e6);
 
 	// Create stream
-	/*let file_fmt:Option<&str> = matches.value_of("file_format");
-	let (bytes_per_sample, mut rx_streamer) = match file_fmt {
-		Some("sc16") => (4, usrp.get_rx_stream::<i16, i16>("")?),
-		Some("fc32") => (8, usrp.get_rx_stream::<i16, f32>("")?),
+	let file_fmt:Option<&str> = matches.value_of("file_format");
+	let (bytes_per_sample, mut tx_streamer) = match file_fmt {
+		Some("sc16") => (4, usrp.get_tx_stream::<i16, i16>("")?),
+		Some("fc32") => (8, usrp.get_tx_stream::<i16, f32>("")?),
 		_ => return Err("Unrecognized file format")
 	};
 
-	let mut outfile = {
+	/*let mut outfile = {
 		let name = matches.value_of("filename")
 			.map(|s| s.to_owned())
 			.unwrap_or(format!("output_{:.2}MHz_{:.1}Msps_gain{:.1}dB_{}.dat", freq/1.0e6, rate/1.0e6, gain, file_fmt.unwrap()));

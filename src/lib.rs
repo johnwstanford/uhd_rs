@@ -4,6 +4,7 @@
 pub mod ffi;
 
 pub mod rx_streamer;
+pub mod tx_streamer;
 pub mod usrp;
 
 pub mod types;

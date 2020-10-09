@@ -38,10 +38,19 @@ extern {
 	
 	// uhd_error uhd_rx_metadata_strerror(uhd_rx_metadata_handle h, char* strerror_out, size_t strbuffer_len)
 	// uhd_error uhd_rx_metadata_last_error(uhd_rx_metadata_handle h, char* error_out, size_t strbuffer_len)
+	
 	// uhd_error uhd_tx_metadata_make(uhd_tx_metadata_handle* handle, bool has_time_spec, int64_t full_secs, double frac_secs, bool start_of_burst, bool end_of_burst)
+	pub fn uhd_tx_metadata_make(handle:&mut usize, has_time_spec:bool, full_secs:i64, frac_secs:f64, start_of_burst:bool, end_of_burst:bool) -> isize;
+	
 	// uhd_error uhd_tx_metadata_free(uhd_tx_metadata_handle* handle)
+	pub fn uhd_tx_metadata_free(handle:&mut usize) -> isize;
+
 	// uhd_error uhd_tx_metadata_has_time_spec(uhd_tx_metadata_handle h, bool *result_out)
+	pub fn uhd_tx_metadata_has_time_spec(h:usize, result_out:&mut bool) -> isize;
+	
 	// uhd_error uhd_tx_metadata_time_spec(uhd_tx_metadata_handle h, int64_t *full_secs_out, double *frac_secs_out)
+	pub fn uhd_tx_metadata_time_spec(h:usize, full_secs_out:&mut i64, frac_secs_out:&mut f64) -> isize;
+
 	// uhd_error uhd_tx_metadata_start_of_burst(uhd_tx_metadata_handle h, bool *result_out)
 	// uhd_error uhd_tx_metadata_end_of_burst(uhd_tx_metadata_handle h, bool *result_out)
 	// uhd_error uhd_tx_metadata_last_error(uhd_tx_metadata_handle h, char* error_out, size_t strbuffer_len)

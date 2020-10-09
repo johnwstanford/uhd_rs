@@ -6,6 +6,7 @@ use crate::ffi::types::{TuneRequest, TuneResult};
 use crate::ffi::usrp::StreamArgs;
 
 use crate::rx_streamer::RxStreamer;
+use crate::tx_streamer::TxStreamer;
 
 #[derive(Debug)]
 pub struct USRP {
@@ -161,6 +162,41 @@ impl USRP {
 		rx_streamer.get_max_num_samps()?;
 
 		Ok(rx_streamer)
+	}
+
+	pub fn get_tx_stream<W: Any, U: Any>(&mut self, args:&str) -> Result<TxStreamer, &'static str> {
+
+		let otw_format = match TypeId::of::<W>() {
+			id if id == TypeId::of::<i16>() => CString::new("sc16").unwrap(),
+			_ => return Err("Unsupported type for wire format")
+		};
+		let cpu_format = match TypeId::of::<U>() {
+			id if id == TypeId::of::<i16>() => CString::new("sc16").unwrap(),
+			id if id == TypeId::of::<f32>() => CString::new("fc32").unwrap(),
+			_ => return Err("Unsupported type for CPU format")
+		};
+
+		let args_cstr = CString::new(args).unwrap();
+
+		// We only support one channel per stream right now
+		let channel = 0;
+
+		let stream_args = StreamArgs {
+		    cpu_format:cpu_format.as_ptr(),	// Format of host memory
+		    otw_format:otw_format.as_ptr(),	// Over-the-wire format		
+		    args:args_cstr.as_ptr(),		// Other stream args
+		    channel_list:&channel, 			// Array that lists channels
+		    n_channels:1					// Number of channels
+		};
+
+		let mut tx_streamer = TxStreamer::new(stream_args.n_channels as usize)?;
+		if unsafe { crate::ffi::usrp::uhd_usrp_get_tx_stream(self.handle, &stream_args, tx_streamer.get_handle()) } != 0 {
+			return Err("Unable to get an TxStream");
+		}
+
+		tx_streamer.get_max_num_samps()?;
+
+		Ok(tx_streamer)
 	}
 
 }
