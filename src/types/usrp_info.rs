@@ -4,7 +4,9 @@ use std::ffi::CStr;
 use libc::c_char;
 
 #[repr(C)]
-pub struct RxInfo {
+// RxInfo and TxInfo have the exact same structure,
+// so I'm just going to use the same struct
+pub struct Info {
     mboard_id:*const c_char,		// Motherboard ID
     mboard_name:*const c_char,		// Motherboard name
     mboard_serial:*const c_char,	// Motherboard serial
@@ -15,7 +17,7 @@ pub struct RxInfo {
     rx_antenna:*const c_char		// RX daughterboard antenna
 }
 
-impl RxInfo {
+impl Info {
 
 	pub fn null() -> Self {
 		Self { 
@@ -96,7 +98,7 @@ impl RxInfo {
 
 }
 
-impl std::ops::Drop for RxInfo {
+impl std::ops::Drop for Info {
 
 	fn drop(&mut self) { unsafe { uhd_usrp_rx_info_free(self); }}
 
@@ -104,8 +106,6 @@ impl std::ops::Drop for RxInfo {
 
 #[link(name = "uhd")]
 extern {
-	// uhd_error uhd_usrp_rx_info_free(uhd_usrp_rx_info_t *rx_info)
-	pub fn uhd_usrp_rx_info_free(rx_info:&mut RxInfo) -> isize;
-	
-	// uhd_error uhd_usrp_tx_info_free(uhd_usrp_tx_info_t *tx_info)
+	pub fn uhd_usrp_rx_info_free(rx_info:&mut Info) -> isize;
+	pub fn uhd_usrp_tx_info_free(tx_info:&mut Info) -> isize;
 }

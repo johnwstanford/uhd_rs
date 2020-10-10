@@ -8,7 +8,7 @@ use crate::ffi::usrp::StreamArgs;
 use crate::rx_streamer::RxStreamer;
 use crate::tx_streamer::TxStreamer;
 use crate::types::string_vector::StringVector;
-use crate::types::usrp_info::RxInfo;
+use crate::types::usrp_info::Info;
 
 #[derive(Debug)]
 pub struct USRP {
@@ -43,11 +43,19 @@ impl USRP {
 
 	}
 
-	pub fn get_rx_info(&self, chan:usize) -> Result<RxInfo, &'static str> {
-		let mut ans = RxInfo::null();
+	pub fn get_rx_info(&self, chan:usize) -> Result<Info, &'static str> {
+		let mut ans = Info::null();
 		match unsafe { crate::ffi::usrp::uhd_usrp_get_rx_info(self.handle, chan, &mut ans) } {
 			0 => Ok(ans),
 			_ => Err("Unable to get Rx info")
+		}
+	}
+
+	pub fn get_tx_info(&self, chan:usize) -> Result<Info, &'static str> {
+		let mut ans = Info::null();
+		match unsafe { crate::ffi::usrp::uhd_usrp_get_tx_info(self.handle, chan, &mut ans) } {
+			0 => Ok(ans),
+			_ => Err("Unable to get Tx info")
 		}
 	}
 

@@ -29,7 +29,16 @@ fn main() -> Result<(), &'static str> {
 		println!("  Antenna: {}", rx_info.rx_antenna()?);
 	
 		println!("TX Info");
-		println!("  Antennas (CH0): {:?}", usrp.get_tx_antennas(0)?);
+		let tx_info = usrp.get_tx_info(0)?;
+		println!("RX Info");
+		println!("  Motherboard ID: {}", tx_info.mboard_id()?);
+		println!("  Motherboard Name: {}", tx_info.mboard_name()?);
+		println!("  Motherboard Serial: {}", tx_info.mboard_serial()?);
+		println!("  RX ID: {}", tx_info.rx_id()?);
+		println!("  Subdevice name: {}", tx_info.rx_subdev_name()?);
+		println!("  Subdevice spec: {}", tx_info.rx_subdev_spec()?);
+		println!("  Serial: {}", tx_info.rx_serial()?);
+		println!("  Antenna: {}", tx_info.rx_antenna()?);
 	}
 
  	Ok(())

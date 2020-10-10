@@ -2,7 +2,7 @@
 use libc::{c_char, size_t};
 
 use crate::ffi::types::{TuneRequest, TuneResult};
-use crate::types::usrp_info::RxInfo;
+use crate::types::usrp_info::Info;
 
 #[repr(C)]
 pub struct StreamArgs {
@@ -78,11 +78,9 @@ extern {
 
 	pub fn uhd_usrp_get_rx_stream(h:usize, stream_args:&StreamArgs, h_out:usize) -> isize;
 	pub fn uhd_usrp_get_tx_stream(h:usize, stream_args:&StreamArgs, h_out:usize) -> isize;
+	pub fn uhd_usrp_get_rx_info(h:usize, chan:size_t, info_out:&mut Info) -> isize;
+	pub fn uhd_usrp_get_tx_info(h:usize, chan:size_t, info_out:&mut Info) -> isize;
 
-	// uhd_error uhd_usrp_get_rx_info(uhd_usrp_handle h, size_t chan, uhd_usrp_rx_info_t *info_out)
-	pub fn uhd_usrp_get_rx_info(h:usize, chan:size_t, info_out:&mut RxInfo) -> isize;
-
-	// uhd_error uhd_usrp_get_tx_info(uhd_usrp_handle h, size_t chan, uhd_usrp_tx_info_t *info_out)
 	// uhd_error uhd_usrp_set_master_clock_rate(uhd_usrp_handle h, double rate, size_t mboard)
 	// uhd_error uhd_usrp_get_master_clock_rate(uhd_usrp_handle h, size_t mboard, double *clock_rate_out)
 	// uhd_error uhd_usrp_get_pp_string(uhd_usrp_handle h, char* pp_string_out, size_t strbuffer_len)
