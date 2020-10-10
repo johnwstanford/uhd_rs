@@ -17,6 +17,14 @@ impl StringVector {
 		}
 	}
 
+	pub fn get_rust_vec(&self) -> Result<Vec<String>, &'static str> {
+		let mut ans:Vec<String> = vec![];
+		for idx in 0..(self.len()?) {
+			ans.push(self.get_at(idx)?);
+		}
+		Ok(ans)		
+	}
+
     pub fn get_at(&self, idx:usize) -> Result<String, &'static str> {
 		let buffer_init = "                                        ";
 		let cstr_ans:CString = CString::new(buffer_init).map_err(|_| "Unable to create CString")?;
@@ -24,8 +32,6 @@ impl StringVector {
             0 => {
             	let ans:String = cstr_ans.into_string().map_err(|_| "Unable to convert CString to String")?;
 				let ans:String = ans.trim_matches(char::from(0)).to_owned();
-            	println!("{}", ans.len());
-
             	Ok(ans)
             },
             _ => Err("Unable to index into string vector")

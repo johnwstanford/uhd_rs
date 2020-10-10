@@ -10,9 +10,15 @@ fn main() -> Result<(), &'static str> {
 		.author("John Stanford (johnwstanford@gmail.com)")
 		.about("A utility for getting USRP device information");
 
-	let usrp = USRP::new("")?;
+	let devices:Vec<String> = USRP::find("")?;
+	println!("Found {} USRP Device(s)", devices.len());
 
-	println!("TX Antennas (CH0): {:?}", usrp.get_tx_antennas(0));
+	for device in devices {
+		println!("Getting info for device {}", device);		
+		let usrp = USRP::new(&device)?;
+	
+		println!("TX Antennas (CH0): {:?}", usrp.get_tx_antennas(0));
+	}
 
  	Ok(())
 }

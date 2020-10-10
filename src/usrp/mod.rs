@@ -16,6 +16,17 @@ pub struct USRP {
 
 impl USRP {
 	
+	pub fn find(args:&str) -> Result<Vec<String>, &'static str> {
+
+		let args = CString::new(args).map_err(|_| "Unable to create CString; check for null characters")?;
+		let mut string_vec = StringVector::new()?;
+		match unsafe { crate::ffi::usrp::uhd_usrp_find(args.as_ptr(), &mut string_vec.handle) } {
+			0 => Ok(string_vec.get_rust_vec()?),
+			_ => Err("Unable to find USRP devices")
+		}
+
+	}
+
 	pub fn new(args:&str) -> Result<Self, &'static str> {
 
 		let args = CString::new(args).map_err(|_| "Unable to create CString; check for null characters")?;
@@ -34,13 +45,7 @@ impl USRP {
 	pub fn get_tx_antennas(&self, chan:usize) -> Result<Vec<String>, &'static str> {
 		let mut string_vec = StringVector::new()?;
 		match unsafe { crate::ffi::usrp::uhd_usrp_get_tx_antennas(self.handle, chan, &mut string_vec.handle) } {
-			0 => {
-				let mut ans:Vec<String> = vec![];
-				for idx in 0..(string_vec.len()?) {
-					ans.push(string_vec.get_at(idx)?);
-				}
-				Ok(ans)
-			},
+			0 => Ok(string_vec.get_rust_vec()?),
 			_ => Err("Unable to retrieve TX antennas")
 		}
 	}

@@ -70,6 +70,7 @@ extern {
 
 	// usrp.h:297-1265
 	// uhd_error uhd_usrp_find(const char* args, uhd_string_vector_handle *strings_out)
+	pub fn uhd_usrp_find(args:*const c_char, strings_out:&mut usize) -> isize;
 
 	pub fn uhd_usrp_make(uhd_usrp_handle: &mut usize, args: *const c_char) -> isize;
 	pub fn uhd_usrp_free(uhd_usrp_handle: &mut usize);
@@ -186,7 +187,6 @@ extern {
 	// uhd_error uhd_usrp_set_tx_antenna(uhd_usrp_handle h, const char* ant, size_t chan)
 	// uhd_error uhd_usrp_get_tx_antenna(uhd_usrp_handle h, size_t chan, char* ant_out, size_t strbuffer_len)
 	
-	// uhd_error uhd_usrp_get_tx_antennas(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *antennas_out)
 	pub fn uhd_usrp_get_tx_antennas(h:usize, chan:size_t, antennas_out:&mut usize) -> isize;
 	
 	// uhd_error uhd_usrp_set_tx_bandwidth(uhd_usrp_handle h, double bandwidth, size_t chan)
