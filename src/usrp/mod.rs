@@ -7,6 +7,7 @@ use crate::ffi::usrp::StreamArgs;
 
 use crate::rx_streamer::RxStreamer;
 use crate::tx_streamer::TxStreamer;
+use crate::types::string_vector::StringVector;
 
 #[derive(Debug)]
 pub struct USRP {
@@ -28,6 +29,14 @@ impl USRP {
 			_ => Err("Unable to create USRP")
 		}
 
+	}
+
+	pub fn get_tx_antennas(&self, chan:usize) -> Result<Vec<String>, &'static str> {
+		let mut string_vec = StringVector::new()?;
+		match unsafe { crate::ffi::usrp::uhd_usrp_get_tx_antennas(self.handle, chan, &mut string_vec.handle) } {
+			0 => Ok(vec![]),
+			_ => Err("Unable to retrieve TX antennas")
+		}
 	}
 
 	pub fn set_rx_rate(&mut self, rate:f64, chan:usize) -> Result<(), &'static str> {

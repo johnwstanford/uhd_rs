@@ -2,6 +2,7 @@
 use libc::c_char;
 
 pub mod metadata;
+pub mod string_vector;
 
 #[repr(C)]
 pub enum TuneRequestPolicy { None = 78, Auto = 65, Manual = 77 }

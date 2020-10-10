@@ -47,60 +47,36 @@ impl StreamCmd {
 extern {
 
 	// usrp.h:109-267
-	// uhd_error uhd_rx_streamer_make(uhd_rx_streamer_handle *h)
 	pub fn uhd_rx_streamer_make(uhd_rx_streamer_handle: &mut usize) -> isize;
-
-	// uhd_error uhd_rx_streamer_free(uhd_rx_streamer_handle *h)
 	pub fn uhd_rx_streamer_free(uhd_rx_streamer_handle: &mut usize) -> isize;
 
 	// uhd_error uhd_rx_streamer_num_channels(uhd_rx_streamer_handle h, size_t *num_channels_out)
 
-	// uhd_error uhd_rx_streamer_max_num_samps(uhd_rx_streamer_handle h, size_t *max_num_samps_out)
 	pub fn uhd_rx_streamer_max_num_samps(h:usize, max_num_samps_out:&mut size_t) -> isize;
-
-	// uhd_error uhd_rx_streamer_recv(uhd_rx_streamer_handle h, void** buffs, size_t samps_per_buff, uhd_rx_metadata_handle *md, double timeout, bool one_packet, size_t *items_recvd)
 	pub fn uhd_rx_streamer_recv(h:usize, buffs:&*const u8, samps_per_buff:size_t, md:&usize, timeout:f64, one_packet:bool, items_recvd:&mut size_t) -> isize;
-	
-	// uhd_error uhd_rx_streamer_issue_stream_cmd(uhd_rx_streamer_handle h, const uhd_stream_cmd_t *stream_cmd)
 	pub fn uhd_rx_streamer_issue_stream_cmd(h:usize, stream_cmd:&StreamCmd) -> isize;
-
-	// uhd_error uhd_rx_streamer_last_error(uhd_rx_streamer_handle h, char* error_out, size_t strbuffer_len)
 	pub fn uhd_rx_streamer_last_error(h:usize, error_out:*const c_char, strbuffer_len:size_t) -> isize;
-
-	// uhd_error uhd_tx_streamer_make(uhd_tx_streamer_handle *h)
 	pub fn uhd_tx_streamer_make(h: &mut usize) -> isize;
-	
-	// uhd_error uhd_tx_streamer_free(uhd_tx_streamer_handle *h)
 	pub fn uhd_tx_streamer_free(h: &mut usize) -> isize;
 	
 	// uhd_error uhd_tx_streamer_num_channels(uhd_tx_streamer_handle h, size_t *num_channels_out)
 	
-	// uhd_error uhd_tx_streamer_max_num_samps(uhd_tx_streamer_handle h, size_t *max_num_samps_out)
 	pub fn uhd_tx_streamer_max_num_samps(h:usize, max_num_samps_out:&mut size_t) -> isize;
-	
-	// uhd_error uhd_tx_streamer_send(uhd_tx_streamer_handle h, const void **buffs, size_t samps_per_buff, uhd_tx_metadata_handle *md, double timeout, size_t *items_sent)
 	pub fn uhd_tx_streamer_send(h:usize, buffs:&*const u8, samps_per_buff:size_t, md:&usize, timeout:f64, items_sent:&mut size_t) -> isize;
 
 	// uhd_error uhd_tx_streamer_recv_async_msg(uhd_tx_streamer_handle h, uhd_async_metadata_handle *md, double timeout, bool *valid)
 	
-	// uhd_error uhd_tx_streamer_last_error(uhd_tx_streamer_handle h, char* error_out, size_t strbuffer_len)
 	pub fn uhd_tx_streamer_last_error(h:usize, error_out:*const c_char, strbuffer_len:size_t) -> isize;
 
 	// usrp.h:297-1265
 	// uhd_error uhd_usrp_find(const char* args, uhd_string_vector_handle *strings_out)
 
-	// uhd_error uhd_usrp_make(uhd_usrp_handle *h, const char *args)
 	pub fn uhd_usrp_make(uhd_usrp_handle: &mut usize, args: *const c_char) -> isize;
-	
-	// uhd_error uhd_usrp_free(uhd_usrp_handle *h)
 	pub fn uhd_usrp_free(uhd_usrp_handle: &mut usize);
 
 	// uhd_error uhd_usrp_last_error(uhd_usrp_handle h, char* error_out, size_t strbuffer_len)
 
-	// uhd_error uhd_usrp_get_rx_stream(uhd_usrp_handle h, uhd_stream_args_t *stream_args, uhd_rx_streamer_handle h_out)
 	pub fn uhd_usrp_get_rx_stream(h:usize, stream_args:&StreamArgs, h_out:usize) -> isize;
-
-	// uhd_error uhd_usrp_get_tx_stream(uhd_usrp_handle h, uhd_stream_args_t *stream_args, uhd_tx_streamer_handle h_out)
 	pub fn uhd_usrp_get_tx_stream(h:usize, stream_args:&StreamArgs, h_out:usize) -> isize;
 
 	// uhd_error uhd_usrp_get_rx_info(uhd_usrp_handle h, size_t chan, uhd_usrp_rx_info_t *info_out)
@@ -138,16 +114,9 @@ extern {
 	// uhd_error uhd_usrp_get_rx_num_channels(uhd_usrp_handle h, size_t *num_channels_out)
 	// uhd_error uhd_usrp_get_rx_subdev_name(uhd_usrp_handle h, size_t chan, char* rx_subdev_name_out, size_t strbuffer_len)
 	
-	// uhd_error uhd_usrp_set_rx_rate(uhd_usrp_handle h, double rate, size_t chan)
 	pub fn uhd_usrp_set_rx_rate(h:usize, rate:f64, chan:size_t) -> isize;
-
-	// uhd_error uhd_usrp_get_rx_rate(uhd_usrp_handle h, size_t chan, double *rate_out)
 	pub fn uhd_usrp_get_rx_rate(h:usize, chan:size_t, rate_out:&mut f64) -> isize;
-
-	// uhd_error uhd_usrp_set_rx_freq(uhd_usrp_handle h, uhd_tune_request_t *tune_request, size_t chan, uhd_tune_result_t *tune_result)
 	pub fn uhd_usrp_set_rx_freq(h:usize, tune_request:&TuneRequest, chan:size_t, tune_result:&mut TuneResult) -> isize;
-
-	// uhd_error uhd_usrp_get_rx_freq(uhd_usrp_handle h, size_t chan, double *freq_out)
 	pub fn uhd_usrp_get_rx_freq(h:usize, chan:size_t, freq_out:&mut f64) -> isize;
 
 	// uhd_error uhd_usrp_get_rx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
@@ -161,13 +130,11 @@ extern {
 	// uhd_error uhd_usrp_set_rx_lo_freq(uhd_usrp_handle h, double freq, const char* name, size_t chan, double* coerced_freq_out)
 	// uhd_error uhd_usrp_get_rx_lo_freq(uhd_usrp_handle h, const char* name, size_t chan, double* rx_lo_freq_out)
 	
-	// uhd_error uhd_usrp_set_rx_gain(uhd_usrp_handle h, double gain, size_t chan, const char *gain_name)
 	pub fn uhd_usrp_set_rx_gain(h:usize, gain:f64, chan:size_t, gain_name:*const c_char) -> isize;
 
 	// uhd_error uhd_usrp_set_normalized_rx_gain(uhd_usrp_handle h, double gain, size_t chan)
 	// uhd_error uhd_usrp_set_rx_agc(uhd_usrp_handle h, bool enable, size_t chan)
 
-	// uhd_error uhd_usrp_get_rx_gain(uhd_usrp_handle h, size_t chan, const char *gain_name,  double *gain_out)
 	pub fn uhd_usrp_get_rx_gain(h:usize, chan:size_t, gain_name:*const c_char, gain_out:&mut f64) -> isize;
 
 	// uhd_error uhd_usrp_get_normalized_rx_gain(uhd_usrp_handle h, size_t chan, double *gain_out)
@@ -188,18 +155,12 @@ extern {
 	// uhd_error uhd_usrp_get_tx_num_channels(uhd_usrp_handle h, size_t *num_channels_out)
 	// uhd_error uhd_usrp_get_tx_subdev_name(uhd_usrp_handle h, size_t chan, char* tx_subdev_name_out, size_t strbuffer_len)
 	
-	// uhd_error uhd_usrp_set_tx_rate(uhd_usrp_handle h, double rate, size_t chan)
 	pub fn uhd_usrp_set_tx_rate(h:usize, rate:f64, chan:size_t) -> isize;
-
-	// uhd_error uhd_usrp_get_tx_rate(uhd_usrp_handle h, size_t chan, double *rate_out)
 	pub fn uhd_usrp_get_tx_rate(h:usize, chan:size_t, rate_out:&mut f64) -> isize;
 
 	// uhd_error uhd_usrp_get_tx_rates(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle rates_out)
 	
-	// uhd_error uhd_usrp_set_tx_freq(uhd_usrp_handle h, uhd_tune_request_t *tune_request, size_t chan, uhd_tune_result_t *tune_result)
 	pub fn uhd_usrp_set_tx_freq(h:usize, tune_request:&TuneRequest, chan:size_t, tune_result:&mut TuneResult) -> isize;
-
-	// uhd_error uhd_usrp_get_tx_freq(uhd_usrp_handle h, size_t chan, double *freq_out)
 	pub fn uhd_usrp_get_tx_freq(h:usize, chan:size_t, freq_out:&mut f64) -> isize;
 	
 	// uhd_error uhd_usrp_get_tx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
@@ -213,20 +174,21 @@ extern {
 	// uhd_error uhd_usrp_set_tx_lo_freq(uhd_usrp_handle h, double freq, const char* name, size_t chan, double* coerced_freq_out)
 	// uhd_error uhd_usrp_get_tx_lo_freq(uhd_usrp_handle h, const char* name, size_t chan, double* tx_lo_freq_out)
 	
-	// uhd_error uhd_usrp_set_tx_gain(uhd_usrp_handle h, double gain, size_t chan, const char *gain_name)
 	pub fn uhd_usrp_set_tx_gain(h:usize, gain:f64, chan:size_t, gain_name:*const c_char) -> isize;
 	
 	// uhd_error uhd_usrp_set_normalized_tx_gain(uhd_usrp_handle h, double gain, size_t chan)
 	// uhd_error uhd_usrp_get_tx_gain_range(uhd_usrp_handle h, const char* name, size_t chan, uhd_meta_range_handle gain_range_out)
 	
-	// uhd_error uhd_usrp_get_tx_gain(uhd_usrp_handle h, size_t chan, const char *gain_name, double *gain_out)
 	pub fn uhd_usrp_get_tx_gain(h:usize, chan:size_t, gain_name:*const c_char, gain_out:&mut f64) -> isize;
 	
 	// uhd_error uhd_usrp_get_normalized_tx_gain(uhd_usrp_handle h, size_t chan, double *gain_out)
 	// uhd_error uhd_usrp_get_tx_gain_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *gain_names_out)
 	// uhd_error uhd_usrp_set_tx_antenna(uhd_usrp_handle h, const char* ant, size_t chan)
 	// uhd_error uhd_usrp_get_tx_antenna(uhd_usrp_handle h, size_t chan, char* ant_out, size_t strbuffer_len)
+	
 	// uhd_error uhd_usrp_get_tx_antennas(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *antennas_out)
+	pub fn uhd_usrp_get_tx_antennas(h:usize, chan:size_t, antennas_out:&mut usize) -> isize;
+	
 	// uhd_error uhd_usrp_set_tx_bandwidth(uhd_usrp_handle h, double bandwidth, size_t chan)
 	// uhd_error uhd_usrp_get_tx_bandwidth(uhd_usrp_handle h, size_t chan, double *bandwidth_out)
 	// uhd_error uhd_usrp_get_tx_bandwidth_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle bandwidth_range_out)

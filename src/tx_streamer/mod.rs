@@ -55,17 +55,6 @@ impl TxStreamer {
 		}
 	}
 
-	/*pub fn tx_metadata_ok(&mut self) -> Result<(), &'static str> {
-		match self.tx_metadata.error_code()? {
-			TxMetadataErrorCode::None => Ok(()),
-			TxMetadataErrorCode::Underflow => { self.underflow_count += 1; Ok(()) },
-			ec => {
-				eprintln!("ERR: {:?}", ec);
-				Err("TxMetadata error code other than None or Underflow")
-			}
-		}
-	}*/
-
 	pub fn tx_metadata_time_spec(&self) -> Result<(i64, f64), &'static str> {
 		self.tx_metadata.time_spec()
 	}
