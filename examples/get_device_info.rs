@@ -1,5 +1,5 @@
 
-use clap::{Arg, App};
+use clap::App;
 
 use uhd_rs::usrp::USRP;
 

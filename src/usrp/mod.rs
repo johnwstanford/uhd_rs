@@ -34,7 +34,13 @@ impl USRP {
 	pub fn get_tx_antennas(&self, chan:usize) -> Result<Vec<String>, &'static str> {
 		let mut string_vec = StringVector::new()?;
 		match unsafe { crate::ffi::usrp::uhd_usrp_get_tx_antennas(self.handle, chan, &mut string_vec.handle) } {
-			0 => Ok(vec![]),
+			0 => {
+				let mut ans:Vec<String> = vec![];
+				for idx in 0..(string_vec.len()?) {
+					ans.push(string_vec.get_at(idx)?);
+				}
+				Ok(ans)
+			},
 			_ => Err("Unable to retrieve TX antennas")
 		}
 	}
