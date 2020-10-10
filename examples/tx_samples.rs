@@ -15,31 +15,31 @@ fn main() -> Result<(), &'static str> {
 		.about("Transmits a simple FM sine waveform over UHD")
 		.arg(Arg::with_name("sample_rate_sps")
 			.short("s").long("sample_rate_sps")
-			.takes_value(true).required(true))
+			.takes_value(true))
 		.arg(Arg::with_name("freq_hz")
 			.long("freq_hz")
-			.takes_value(true).required(true))
+			.takes_value(true))
 		.arg(Arg::with_name("gain_db")
 			.long("gain_db")
-			.takes_value(true).required(true))
+			.takes_value(true))
 		.arg(Arg::with_name("fm_freq_hz")
 			.long("fm_freq_hz")
-			.takes_value(true).required(true))
+			.takes_value(true))
 		.arg(Arg::with_name("fm_width_hz")
 			.long("fm_width_hz")
-			.takes_value(true).required(true))
+			.takes_value(true))
 		.arg(Arg::with_name("time_sec")
 			.long("time_sec")
-			.takes_value(true).required(true))
+			.takes_value(true))
 		.get_matches();
 
-	let freq:f64 = matches.value_of("freq_hz").unwrap().parse().unwrap();
-	let rate:f64 = matches.value_of("sample_rate_sps").unwrap().parse().unwrap();
-	let gain:f64 = matches.value_of("gain_db").unwrap().parse().unwrap();
+	let freq:f64 = matches.value_of("freq_hz").unwrap_or("2414e6").parse().unwrap();
+	let rate:f64 = matches.value_of("sample_rate_sps").unwrap_or("4e6").parse().unwrap();
+	let gain:f64 = matches.value_of("gain_db").unwrap_or("76.0").parse().unwrap();
 
-	let mod_freq_hz:f64  = matches.value_of("fm_freq_hz").unwrap().parse().unwrap();
-	let mod_width_hz:f64 = matches.value_of("fm_width_hz").unwrap().parse().unwrap();
-	let time_sec:f64     = matches.value_of("time_sec").unwrap().parse().unwrap();
+	let mod_freq_hz:f64  = matches.value_of("fm_freq_hz").unwrap_or("0.5").parse().unwrap();
+	let mod_width_hz:f64 = matches.value_of("fm_width_hz").unwrap_or("5.0e4").parse().unwrap();
+	let time_sec:f64     = matches.value_of("time_sec").unwrap_or("10").parse().unwrap();
 	let num_samps:usize  = (rate*time_sec) as usize;
 
 	let channel = 0;

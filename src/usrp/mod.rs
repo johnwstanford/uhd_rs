@@ -16,17 +16,10 @@ pub struct USRP {
 }
 
 mod impl_static;
+mod impl_rx;
 
 impl USRP {
 	
-	pub fn get_rx_info(&self, chan:usize) -> Result<Info, &'static str> {
-		let mut ans = Info::null();
-		match unsafe { crate::ffi::usrp::uhd_usrp_get_rx_info(self.handle, chan, &mut ans) } {
-			0 => Ok(ans),
-			_ => Err("Unable to get Rx info")
-		}
-	}
-
 	pub fn get_tx_info(&self, chan:usize) -> Result<Info, &'static str> {
 		let mut ans = Info::null();
 		match unsafe { crate::ffi::usrp::uhd_usrp_get_tx_info(self.handle, chan, &mut ans) } {
@@ -43,25 +36,10 @@ impl USRP {
 		}
 	}
 
-	pub fn set_rx_rate(&mut self, rate:f64, chan:usize) -> Result<(), &'static str> {
-		match unsafe { crate::ffi::usrp::uhd_usrp_set_rx_rate(self.handle, rate, chan) } {
-			0 => Ok(()),
-			_ => Err("Unable to set RX rate")
-		}
-	}
-
 	pub fn set_tx_rate(&mut self, rate:f64, chan:usize) -> Result<(), &'static str> {
 		match unsafe { crate::ffi::usrp::uhd_usrp_set_tx_rate(self.handle, rate, chan) } {
 			0 => Ok(()),
 			_ => Err("Unable to set TX rate")
-		}
-	}
-
-	pub fn get_rx_rate(&self, chan:usize) -> Result<f64, &'static str> {
-		let mut ans:f64 = 0.0;
-		match unsafe { crate::ffi::usrp::uhd_usrp_get_rx_rate(self.handle, chan, &mut ans) } {
-			0 => Ok(ans),
-			_ => Err("Unable to get RX rate")
 		}
 	}
 

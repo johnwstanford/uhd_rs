@@ -70,15 +70,12 @@ extern {
 	pub fn uhd_tx_streamer_last_error(h:usize, error_out:*const c_char, strbuffer_len:size_t) -> isize;
 
 	// usrp.h:297-1265
-	pub fn uhd_usrp_find(args:*const c_char, strings_out:&mut usize) -> isize;
-	pub fn uhd_usrp_make(uhd_usrp_handle: &mut usize, args: *const c_char) -> isize;
 	pub fn uhd_usrp_free(uhd_usrp_handle: &mut usize);
 
 	// uhd_error uhd_usrp_last_error(uhd_usrp_handle h, char* error_out, size_t strbuffer_len)
 
 	pub fn uhd_usrp_get_rx_stream(h:usize, stream_args:&StreamArgs, h_out:usize) -> isize;
 	pub fn uhd_usrp_get_tx_stream(h:usize, stream_args:&StreamArgs, h_out:usize) -> isize;
-	pub fn uhd_usrp_get_rx_info(h:usize, chan:size_t, info_out:&mut Info) -> isize;
 	pub fn uhd_usrp_get_tx_info(h:usize, chan:size_t, info_out:&mut Info) -> isize;
 
 	// uhd_error uhd_usrp_set_master_clock_rate(uhd_usrp_handle h, double rate, size_t mboard)
@@ -116,8 +113,6 @@ extern {
 	// uhd_error uhd_usrp_get_rx_num_channels(uhd_usrp_handle h, size_t *num_channels_out)
 	// uhd_error uhd_usrp_get_rx_subdev_name(uhd_usrp_handle h, size_t chan, char* rx_subdev_name_out, size_t strbuffer_len)
 	
-	pub fn uhd_usrp_set_rx_rate(h:usize, rate:f64, chan:size_t) -> isize;
-	pub fn uhd_usrp_get_rx_rate(h:usize, chan:size_t, rate_out:&mut f64) -> isize;
 	pub fn uhd_usrp_set_rx_freq(h:usize, tune_request:&TuneRequest, chan:size_t, tune_result:&mut TuneResult) -> isize;
 	pub fn uhd_usrp_get_rx_freq(h:usize, chan:size_t, freq_out:&mut f64) -> isize;
 
