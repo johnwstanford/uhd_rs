@@ -22,23 +22,22 @@ fn main() -> Result<(), &'static str> {
 		println!("  Motherboard ID: {}", rx_info.mboard_id()?);
 		println!("  Motherboard Name: {}", rx_info.mboard_name()?);
 		println!("  Motherboard Serial: {}", rx_info.mboard_serial()?);
-		println!("  RX ID: {}", rx_info.rx_id()?);
-		println!("  Subdevice name: {}", rx_info.rx_subdev_name()?);
-		println!("  Subdevice spec: {}", rx_info.rx_subdev_spec()?);
-		println!("  Serial: {}", rx_info.rx_serial()?);
-		println!("  Antenna: {}", rx_info.rx_antenna()?);
+		println!("  RX ID: {}", rx_info.id()?);
+		println!("  Subdevice name: {}", rx_info.subdev_name()?);
+		println!("  Subdevice spec: {}", rx_info.subdev_spec()?);
+		println!("  Serial: {}", rx_info.serial()?);
+		println!("  Antenna: {}", rx_info.antenna()?);
 	
-		println!("TX Info");
 		let tx_info = usrp.get_tx_info(0)?;
-		println!("RX Info");
+		println!("TX Info");
 		println!("  Motherboard ID: {}", tx_info.mboard_id()?);
 		println!("  Motherboard Name: {}", tx_info.mboard_name()?);
 		println!("  Motherboard Serial: {}", tx_info.mboard_serial()?);
-		println!("  RX ID: {}", tx_info.rx_id()?);
-		println!("  Subdevice name: {}", tx_info.rx_subdev_name()?);
-		println!("  Subdevice spec: {}", tx_info.rx_subdev_spec()?);
-		println!("  Serial: {}", tx_info.rx_serial()?);
-		println!("  Antenna: {}", tx_info.rx_antenna()?);
+		println!("  TX ID: {}", tx_info.id()?);
+		println!("  Subdevice name: {}", tx_info.subdev_name()?);
+		println!("  Subdevice spec: {}", tx_info.subdev_spec()?);
+		println!("  Serial: {}", tx_info.serial()?);
+		println!("  Antenna: {}", tx_info.antenna()?);
 	}
 
  	Ok(())

@@ -15,34 +15,10 @@ pub struct USRP {
 	handle:usize
 }
 
+mod impl_static;
+
 impl USRP {
 	
-	pub fn find(args:&str) -> Result<Vec<String>, &'static str> {
-
-		let args = CString::new(args).map_err(|_| "Unable to create CString; check for null characters")?;
-		let mut string_vec = StringVector::new()?;
-		match unsafe { crate::ffi::usrp::uhd_usrp_find(args.as_ptr(), &mut string_vec.handle) } {
-			0 => Ok(string_vec.get_rust_vec()?),
-			_ => Err("Unable to find USRP devices")
-		}
-
-	}
-
-	pub fn new(args:&str) -> Result<Self, &'static str> {
-
-		let args = CString::new(args).map_err(|_| "Unable to create CString; check for null characters")?;
-
-		let mut handle:usize = 0;
-
-		let result = unsafe { crate::ffi::usrp::uhd_usrp_make(&mut handle, args.as_ptr()) };
-
-		match result {
-			0 => Ok(USRP{ handle }),
-			_ => Err("Unable to create USRP")
-		}
-
-	}
-
 	pub fn get_rx_info(&self, chan:usize) -> Result<Info, &'static str> {
 		let mut ans = Info::null();
 		match unsafe { crate::ffi::usrp::uhd_usrp_get_rx_info(self.handle, chan, &mut ans) } {

@@ -101,7 +101,9 @@ extern {
 	// uhd_error uhd_usrp_get_clock_sources(uhd_usrp_handle h, size_t mboard, uhd_string_vector_handle *clock_sources_out)
 	// uhd_error uhd_usrp_set_clock_source_out(uhd_usrp_handle h, bool enb, size_t mboard)
 	// uhd_error uhd_usrp_set_time_source_out(uhd_usrp_handle h, bool enb, size_t mboard)
+	
 	// uhd_error uhd_usrp_get_num_mboards(uhd_usrp_handle h, size_t *num_mboards_out)
+	
 	// uhd_error uhd_usrp_get_mboard_sensor(uhd_usrp_handle h, const char* name, size_t mboard, uhd_sensor_value_handle *sensor_value_out)
 	// uhd_error uhd_usrp_get_mboard_sensor_names(uhd_usrp_handle h, size_t mboard, uhd_string_vector_handle *mboard_sensor_names_out)
 	// uhd_error uhd_usrp_set_user_register(uhd_usrp_handle h, uint8_t addr, uint32_t data, size_t mboard)
