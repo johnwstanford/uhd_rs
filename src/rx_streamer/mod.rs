@@ -22,7 +22,6 @@ extern {
 
 pub struct RxStreamer {
 	handle:usize,
-	num_channels:usize,
 	max_num_samps:usize,	// Max number of samples per buffer per packet
 	pub buffer:[u8; BUFFER_SIZE],	// TODO: consider putting this on the heap
 	timeout:f64,
@@ -65,7 +64,7 @@ impl RxStreamer {
 		let buffer = [0u8; BUFFER_SIZE];
 
 		match unsafe { uhd_rx_streamer_make(&mut handle) } {
-			0 => Ok(RxStreamer{ handle, num_channels, max_num_samps:0, buffer,
+			0 => Ok(RxStreamer{ handle, max_num_samps:0, buffer,
 				timeout: 3.0, rx_metadata, overflow_count:0}),
 			_ => Err("Unable to create RX streamer")
 		}

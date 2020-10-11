@@ -1,16 +1,28 @@
 
 use std::ffi::CString;
 
-use crate::ffi::usrp;
+use libc::{c_char, size_t};
+
 use crate::types::metadata::TxMetadata;
+
+#[link(name = "uhd")]
+extern {
+	
+	fn uhd_tx_streamer_make(h: &mut usize) -> isize;
+	fn uhd_tx_streamer_free(h: &mut usize) -> isize;
+	fn uhd_tx_streamer_max_num_samps(h:usize, max_num_samps_out:&mut size_t) -> isize;
+	fn uhd_tx_streamer_send(h:usize, buffs:&*const u8, samps_per_buff:size_t, md:&usize, timeout:f64, items_sent:&mut size_t) -> isize;
+	fn uhd_tx_streamer_last_error(h:usize, error_out:*const c_char, strbuffer_len:size_t) -> isize;
+
+}
+
+pub const DEFAULT_TIMEOUT:f64 = 3.0;
 
 pub struct TxStreamer {
 	handle:usize,
-	num_channels:usize,
 	max_num_samps:usize,	// Max number of samples per buffer per packet
 	timeout:f64,
-	tx_metadata:TxMetadata,
-	underflow_count:usize
+	tx_metadata:TxMetadata
 }
 
 impl TxStreamer {
@@ -22,9 +34,8 @@ impl TxStreamer {
 		let mut handle:usize = 0;
 		let tx_metadata = TxMetadata::new()?;
 
-		match unsafe { usrp::uhd_tx_streamer_make(&mut handle) } {
-			0 => Ok(TxStreamer{ handle, num_channels, max_num_samps:0,
-				timeout: 3.0, tx_metadata, underflow_count:0}),
+		match unsafe { uhd_tx_streamer_make(&mut handle) } {
+			0 => Ok(TxStreamer{ handle, max_num_samps:0, timeout: DEFAULT_TIMEOUT, tx_metadata}),
 			_ => Err("Unable to create TX streamer")
 		}
 	}
@@ -32,7 +43,7 @@ impl TxStreamer {
 	pub fn get_handle(&self) -> usize { self.handle }
 
 	pub fn get_max_num_samps(&mut self) -> Result<usize, &'static str> {
-		match unsafe { usrp::uhd_tx_streamer_max_num_samps(self.handle, &mut self.max_num_samps) } {
+		match unsafe { uhd_tx_streamer_max_num_samps(self.handle, &mut self.max_num_samps) } {
 			0 => Ok(self.max_num_samps),
 			_ => Err("Unable to get sample buffer size for the newly-created RxStream")
 		}
@@ -45,7 +56,7 @@ impl TxStreamer {
 			let buff_ptr:*const u8 = buffer.as_ptr() as *const u8;
 			let mut items_sent = 0;
 			let result = unsafe { 
-				usrp::uhd_tx_streamer_send(self.handle, &buff_ptr, buffer.len(), 
+				uhd_tx_streamer_send(self.handle, &buff_ptr, buffer.len(), 
 					&self.tx_metadata.handle, self.timeout, &mut items_sent) 
 			};
 			match result {
@@ -62,7 +73,7 @@ impl TxStreamer {
 	pub fn last_error(&self) -> Result<String, &'static str> {
 		let buffer_init = "                                        ";
 		let cstr_ans:CString = CString::new(buffer_init).unwrap();
-		match unsafe { usrp::uhd_tx_streamer_last_error(self.handle, cstr_ans.as_ptr(), buffer_init.len()) } {
+		match unsafe { uhd_tx_streamer_last_error(self.handle, cstr_ans.as_ptr(), buffer_init.len()) } {
 			0 => cstr_ans.into_string().map_err(|_| "Unable to convert CString to String"),
 			_ => Err("Unable to get last error from TxStreamer")
 		}
@@ -73,8 +84,7 @@ impl TxStreamer {
 impl std::ops::Drop for TxStreamer {
 
 	fn drop(&mut self) {
-		// TODO: consider checking the return value
-		unsafe { crate::ffi::usrp::uhd_tx_streamer_free(&mut self.handle); }
+		unsafe { uhd_tx_streamer_free(&mut self.handle); }
 	}
 
 }
