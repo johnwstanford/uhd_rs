@@ -90,19 +90,6 @@ impl RxStreamer {
 		}
 	}
 
-	pub fn recv(&mut self, one_packet:bool) -> Result<usize, &'static str> {
-		let buff_ptr:*const u8 = self.buffer.as_ptr() as *const u8;
-		let mut items_recvd = 0;
-		let result = unsafe { 
-			uhd_rx_streamer_recv(self.handle, &buff_ptr, self.max_num_samps, 
-				&self.rx_metadata.handle, self.timeout, one_packet, &mut items_recvd) 
-		};
-		match result {
-			0 => Ok(items_recvd),
-			_ => Err("Unable to receive from RxStreamer")
-		}
-	}
-
 	pub fn rx_metadata_ok(&mut self) -> Result<(), &'static str> {
 		match self.rx_metadata.error_code()? {
 			RxMetadataErrorCode::None => Ok(()),
