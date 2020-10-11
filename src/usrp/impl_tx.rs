@@ -16,7 +16,7 @@ extern {
 
 	fn uhd_usrp_get_tx_info(h:usize, chan:size_t, info_out:&mut Info) -> isize;
 	fn uhd_usrp_get_tx_antennas(h:usize, chan:size_t, antennas_out:&mut usize) -> isize;
-	// uhd_error uhd_usrp_get_tx_num_channels(uhd_usrp_handle h, size_t *num_channels_out)
+	fn uhd_usrp_get_tx_num_channels(h:usize, num_channels_out:&mut usize) -> isize;
 	
 	fn uhd_usrp_set_tx_rate(h:usize, rate:f64, chan:size_t) -> isize;
 	fn uhd_usrp_get_tx_rate(h:usize, chan:size_t, rate_out:&mut f64) -> isize;
@@ -64,6 +64,14 @@ impl super::USRP {
 		tx_streamer.get_max_num_samps()?;
 
 		Ok(tx_streamer)
+	}
+
+	pub fn tx_num_channels(&self) -> Result<usize, &'static str> {
+		let mut ans:usize = 0;
+		match unsafe { uhd_usrp_get_tx_num_channels(self.handle, &mut ans) } {
+			0 => Ok(ans),
+			_ => Err("Unable to get number of TX channels")
+		}
 	}
 
 	pub fn get_tx_info(&self, chan:usize) -> Result<Info, &'static str> {

@@ -14,7 +14,7 @@ use crate::rx_streamer::RxStreamer;
 extern {
 
 	fn uhd_usrp_get_rx_info(h:usize, chan:size_t, info_out:&mut Info) -> isize;
-	// uhd_error uhd_usrp_get_rx_num_channels(uhd_usrp_handle h, size_t *num_channels_out)
+	fn uhd_usrp_get_rx_num_channels(h:usize, num_channels_out:&mut size_t) -> isize;
 
 	fn uhd_usrp_set_rx_rate(h:usize, rate:f64, chan:size_t) -> isize;
 	fn uhd_usrp_get_rx_rate(h:usize, chan:size_t, rate_out:&mut f64) -> isize;
@@ -65,6 +65,14 @@ impl super::USRP {
 		rx_streamer.get_max_num_samps()?;
 
 		Ok(rx_streamer)
+	}
+
+	pub fn rx_num_channels(&self) -> Result<usize, &'static str> {
+		let mut ans:usize = 0;
+		match unsafe { uhd_usrp_get_rx_num_channels(self.handle, &mut ans) } {
+			0 => Ok(ans),
+			_ => Err("Unable to get number of RX channels")
+		}
 	}
 
 	pub fn get_rx_info(&self, chan:usize) -> Result<Info, &'static str> {

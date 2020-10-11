@@ -27,6 +27,8 @@ fn main() -> Result<(), &'static str> {
 		println!("  Subdevice spec: {}", rx_info.subdev_spec()?);
 		println!("  Serial: {}", rx_info.serial()?);
 		println!("  Antenna: {}", rx_info.antenna()?);
+
+		println!("  Num channels: {}", usrp.rx_num_channels()?);
 	
 		let tx_info = usrp.get_tx_info(0)?;
 		println!("TX Info");
@@ -38,6 +40,8 @@ fn main() -> Result<(), &'static str> {
 		println!("  Subdevice spec: {}", tx_info.subdev_spec()?);
 		println!("  Serial: {}", tx_info.serial()?);
 		println!("  Antenna: {}", tx_info.antenna()?);
+
+		println!("  Num channles: {}", usrp.tx_num_channels()?);
 	}
 
  	Ok(())
