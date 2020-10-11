@@ -1,11 +1,24 @@
 
 use std::ffi::CString;
+use std::io::{Error, ErrorKind};
 
-use crate::ffi::usrp;
+use libc::{c_char, size_t};
+
+use crate::ffi::usrp::StreamCmd;
 use crate::ffi::types::metadata::RxMetadataErrorCode;
 use crate::types::metadata::RxMetadata;
 
 const BUFFER_SIZE:usize = 4096*8;
+
+#[link(name = "uhd")]
+extern {
+	fn uhd_rx_streamer_make(uhd_rx_streamer_handle: &mut usize) -> isize;
+	fn uhd_rx_streamer_free(uhd_rx_streamer_handle: &mut usize) -> isize;
+	fn uhd_rx_streamer_max_num_samps(h:usize, max_num_samps_out:&mut size_t) -> isize;
+	fn uhd_rx_streamer_recv(h:usize, buffs:&*const u8, samps_per_buff:size_t, md:&usize, timeout:f64, one_packet:bool, items_recvd:&mut size_t) -> isize;
+	fn uhd_rx_streamer_issue_stream_cmd(h:usize, stream_cmd:&StreamCmd) -> isize;
+	fn uhd_rx_streamer_last_error(h:usize, error_out:*const c_char, strbuffer_len:size_t) -> isize;
+}
 
 pub struct RxStreamer {
 	handle:usize,
@@ -15,6 +28,30 @@ pub struct RxStreamer {
 	timeout:f64,
 	rx_metadata:RxMetadata,
 	overflow_count:usize
+}
+
+impl std::io::Read for RxStreamer {
+
+	fn read(&mut self, buff: &mut [u8]) -> std::result::Result<usize, std::io::Error> { 
+
+		let mut current_idx = 0;
+		let mut items_recvd = 0;
+
+		while current_idx < buff.len() {
+			let result = unsafe { 
+				uhd_rx_streamer_recv(self.handle, &(&(buff[current_idx]) as *const u8), 
+					std::cmp::min(self.max_num_samps, (buff.len() - current_idx)/4), 
+					&self.rx_metadata.handle, self.timeout, false, &mut items_recvd)
+			};
+
+			if result != 0 { return Err(Error::new(ErrorKind::Interrupted, "Unable to receive from RX stream")); }
+
+			current_idx += items_recvd*4;
+		}
+
+		Ok(current_idx)
+	}
+
 }
 
 impl RxStreamer {
@@ -27,7 +64,7 @@ impl RxStreamer {
 		let rx_metadata = RxMetadata::new()?;
 		let buffer = [0u8; BUFFER_SIZE];
 
-		match unsafe { usrp::uhd_rx_streamer_make(&mut handle) } {
+		match unsafe { uhd_rx_streamer_make(&mut handle) } {
 			0 => Ok(RxStreamer{ handle, num_channels, max_num_samps:0, buffer,
 				timeout: 3.0, rx_metadata, overflow_count:0}),
 			_ => Err("Unable to create RX streamer")
@@ -37,7 +74,7 @@ impl RxStreamer {
 	pub fn get_handle(&self) -> usize { self.handle }
 
 	pub fn get_max_num_samps(&mut self) -> Result<usize, &'static str> {
-		match unsafe { usrp::uhd_rx_streamer_max_num_samps(self.handle, &mut self.max_num_samps) } {
+		match unsafe { uhd_rx_streamer_max_num_samps(self.handle, &mut self.max_num_samps) } {
 			0 => match self.max_num_samps {
 				n if n > self.buffer.len() => Err("Statically-sized buffer is too small"),
 				n => Ok(n)
@@ -46,8 +83,8 @@ impl RxStreamer {
 		}
 	}
 
-	pub fn stream(&mut self, stream_cmd:&usrp::StreamCmd) -> Result<(), &'static str> {
-		match unsafe { usrp::uhd_rx_streamer_issue_stream_cmd(self.handle, stream_cmd) } {
+	pub fn stream(&mut self, stream_cmd:&StreamCmd) -> Result<(), &'static str> {
+		match unsafe { uhd_rx_streamer_issue_stream_cmd(self.handle, stream_cmd) } {
 			0 => Ok(()),
 			_ => Err("Unable to issue stream command")
 		}
@@ -57,7 +94,7 @@ impl RxStreamer {
 		let buff_ptr:*const u8 = self.buffer.as_ptr() as *const u8;
 		let mut items_recvd = 0;
 		let result = unsafe { 
-			usrp::uhd_rx_streamer_recv(self.handle, &buff_ptr, self.max_num_samps, 
+			uhd_rx_streamer_recv(self.handle, &buff_ptr, self.max_num_samps, 
 				&self.rx_metadata.handle, self.timeout, one_packet, &mut items_recvd) 
 		};
 		match result {
@@ -84,7 +121,7 @@ impl RxStreamer {
 	pub fn last_error(&self) -> Result<String, &'static str> {
 		let buffer_init = "                                        ";
 		let cstr_ans:CString = CString::new(buffer_init).unwrap();
-		match unsafe { usrp::uhd_rx_streamer_last_error(self.handle, cstr_ans.as_ptr(), buffer_init.len()) } {
+		match unsafe { uhd_rx_streamer_last_error(self.handle, cstr_ans.as_ptr(), buffer_init.len()) } {
 			0 => cstr_ans.into_string().map_err(|_| "Unable to convert CString to String"),
 			_ => Err("Unable to get last error from RxStreamer")
 		}
@@ -95,8 +132,7 @@ impl RxStreamer {
 impl std::ops::Drop for RxStreamer {
 
 	fn drop(&mut self) {
-		// TODO: consider checking the return value
-		unsafe { crate::ffi::usrp::uhd_rx_streamer_free(&mut self.handle); }
+		unsafe { uhd_rx_streamer_free(&mut self.handle); }
 	}
 
 }

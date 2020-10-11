@@ -1,5 +1,5 @@
 
-use std::io::Write;
+use std::io::{Read, Write};
 use std::ffi::CString;
 
 use clap::{Arg, App};
@@ -98,16 +98,19 @@ fn main() -> Result<(), &'static str> {
 	rx_streamer.stream(&stream_cmd_start)?;
 
 	let mut total_samps:usize = 0;
+	let mut buffer:[u8; 9000] = [0u8; 9000];
 
 	while total_samps < n_samples {
-		let num_samps = rx_streamer.recv(false)?;
+
+		let bytes_read = rx_streamer.read(&mut buffer).map_err(|_| "Unable to read from RX streamer")?;
+
 		rx_streamer.rx_metadata_ok()?;
 
-		if num_samps > 0 {
+		if bytes_read > 0 {
 
-			outfile.write(&rx_streamer.buffer[..(num_samps*bytes_per_sample)]).unwrap();
+			outfile.write(&buffer[..bytes_read]).unwrap();
 
-			total_samps += num_samps;
+			total_samps += bytes_read / bytes_per_sample;
 		}
 	}
 

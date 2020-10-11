@@ -14,6 +14,7 @@ use crate::rx_streamer::RxStreamer;
 extern {
 
 	fn uhd_usrp_get_rx_info(h:usize, chan:size_t, info_out:&mut Info) -> isize;
+	// uhd_error uhd_usrp_get_rx_num_channels(uhd_usrp_handle h, size_t *num_channels_out)
 
 	fn uhd_usrp_set_rx_rate(h:usize, rate:f64, chan:size_t) -> isize;
 	fn uhd_usrp_get_rx_rate(h:usize, chan:size_t, rate_out:&mut f64) -> isize;
