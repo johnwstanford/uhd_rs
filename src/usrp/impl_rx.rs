@@ -22,12 +22,29 @@ extern {
 	fn uhd_usrp_get_rx_gain(h:usize, chan:size_t, gain_name:*const c_char, gain_out:&mut f64) -> isize;
 	fn uhd_usrp_set_rx_freq(h:usize, tune_request:&TuneRequest, chan:size_t, tune_result:&mut TuneResult) -> isize;
 	fn uhd_usrp_get_rx_freq(h:usize, chan:size_t, freq_out:&mut f64) -> isize;
+	fn uhd_usrp_set_rx_bandwidth(h:usize, bandwidth:f64, chan:size_t) -> isize;
+	fn uhd_usrp_get_rx_bandwidth(h:usize, chan:size_t, bandwidth_out:&mut f64) -> isize;
 
 	fn uhd_usrp_get_rx_stream(h:usize, stream_args:&StreamArgs, h_out:usize) -> isize;
 
 }
 
 impl super::USRP {
+
+	pub fn get_rx_bandwidth(&self, chan:usize) -> Result<f64, &'static str> {
+		let mut ans:f64 = 0.0;
+		match unsafe { uhd_usrp_get_rx_bandwidth(self.handle, chan, &mut ans) } {
+			0 => Ok(ans),
+			_ => Err("Unable to get RX bandwidth")
+		}
+	}
+
+	pub fn set_rx_bandwidth(&mut self, bandwidth:f64, chan:usize) -> Result<(), &'static str> {
+		match unsafe { uhd_usrp_set_rx_bandwidth(self.handle, bandwidth, chan) } {
+			0 => Ok(()),
+			_ => Err("Unable to set RX bandwidth")
+		}
+	}
 
 	pub fn get_rx_stream<W: Any, U: Any>(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
 		// Note: This implementation assumes that you always want to create a new RxStreamer for every stream you want
