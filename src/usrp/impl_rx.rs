@@ -40,10 +40,14 @@ impl super::USRP {
 	}
 
 	pub fn set_rx_bandwidth(&mut self, bandwidth:f64, chan:usize) -> Result<(), &'static str> {
-		if self.last_commanded_bw == Some(bandwidth) { return Ok(()); }
-		match unsafe { uhd_usrp_set_rx_bandwidth(self.handle, bandwidth, chan) } {
-			0 => Ok(()),
-			_ => Err("Unable to set RX bandwidth")
+		if self.last_commanded_bw == Some(bandwidth) { 
+			Ok(())
+		} else {
+			self.last_commanded_bw = Some(bandwidth);		
+			match unsafe { uhd_usrp_set_rx_bandwidth(self.handle, bandwidth, chan) } {
+				0 => Ok(()),
+				_ => Err("Unable to set RX bandwidth")
+			}
 		}
 	}
 
@@ -102,10 +106,14 @@ impl super::USRP {
 	}
 
 	pub fn set_rx_rate(&mut self, rate:f64, chan:usize) -> Result<(), &'static str> {
-		if self.last_commanded_rate == Some(rate) { return Ok(()); }
-		match unsafe { uhd_usrp_set_rx_rate(self.handle, rate, chan) } {
-			0 => Ok(()),
-			_ => Err("Unable to set RX rate")
+		if self.last_commanded_rate == Some(rate) { 
+			Ok(())
+		} else {
+			self.last_commanded_rate = Some(rate);
+			match unsafe { uhd_usrp_set_rx_rate(self.handle, rate, chan) } {
+				0 => Ok(()),
+				_ => Err("Unable to set RX rate")
+			}			
 		}
 	}
 
@@ -118,11 +126,15 @@ impl super::USRP {
 	}
 
 	pub fn set_rx_gain(&mut self, gain:f64, chan:usize, gain_name:&str) -> Result<(), &'static str> {
-		if self.last_commanded_gain == Some(gain) { return Ok(()); }
-		let gain_name_c:CString = CString::new(gain_name).unwrap();
-		match unsafe { uhd_usrp_set_rx_gain(self.handle, gain, chan, gain_name_c.as_ptr()) } {
-			0 => Ok(()),
-			_ => Err("Unable to set RX gain")
+		if self.last_commanded_gain == Some(gain) { 
+			Ok(()) 
+		} else {
+			self.last_commanded_gain = Some(gain);
+			let gain_name_c:CString = CString::new(gain_name).unwrap();
+			match unsafe { uhd_usrp_set_rx_gain(self.handle, gain, chan, gain_name_c.as_ptr()) } {
+				0 => Ok(()),
+				_ => Err("Unable to set RX gain")
+			}
 		}
 	}
 

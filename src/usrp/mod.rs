@@ -4,7 +4,7 @@ extern {
 	fn uhd_usrp_free(uhd_usrp_handle: &mut usize);	
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct USRP {
 	handle:usize,
 	last_commanded_rate:Option<f64>,
