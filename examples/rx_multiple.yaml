@@ -1,0 +1,13 @@
+---
+- center_freq_hz: 1575420000.0
+  sample_rate_sps: 2000000.0
+  bandwidth_hz: 2000000.0
+  gain_db: 76.0
+  time_warmup_sec: 0.0
+  time_sec: 300.0
+- center_freq_hz: 1575421000.0
+  sample_rate_sps: 2000000.0
+  bandwidth_hz: 2000000.0
+  gain_db: 76.0
+  time_warmup_sec: 0.0
+  time_sec: 300.0
