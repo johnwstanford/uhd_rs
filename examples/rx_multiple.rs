@@ -6,8 +6,6 @@ use uhd_rs::usrp::USRP;
 
 use uhd_rs::job::{Job, simple_rx};
 
-const DEFAULT_WARMUP_SEC:&str = "0.5";
-
 fn main() -> Result<(), &'static str> {
 
 	let matches = App::new("Rx Example for UHD_rs")
@@ -28,14 +26,15 @@ fn main() -> Result<(), &'static str> {
 		serde_yaml::from_reader(BufReader::new(f)).map_err(|_| "Unable to parse configuration YAML")?
 	};
 
-	println!("{:#?}", config);
+	let mut usrp = USRP::new("")?;
 
-	// let mut usrp = USRP::new("")?;
+	for job in config {
+		let waveform:Vec<u8> = job.execute(&mut usrp)?;
+	
+		let filename = format!("output_{}.dat", job.descriptor());
 
-	// let waveform:Vec<u8> = job.execute(&mut usrp)?;
-
-
-	// std::fs::write("rx_multiple.yaml", serde_yaml::to_string(&config).unwrap().as_bytes()).map_err(|_| "Unable to save output file")?;
+		std::fs::write(filename, &waveform).map_err(|_| "Unable to save output file")?;
+	}
 
  	Ok(())
 }
