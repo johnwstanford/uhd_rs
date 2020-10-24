@@ -25,7 +25,7 @@ pub struct SimpleRx {
 impl Job<Vec<u8>> for SimpleRx {
 
 	fn descriptor(&self) -> String {
-		format!("output_{:.4}MHz_bw{:.1}MHz_{:.1}Msps_gain{:.1}dB_sc16", 
+		format!("{:.4}MHz_bw{:.1}MHz_{:.1}Msps_gain{:.1}dB_sc16", 
 					self.center_freq_hz/1.0e6, 
 					self.bandwidth_hz/1.0e6,
 					self.sample_rate_sps/1.0e6, 

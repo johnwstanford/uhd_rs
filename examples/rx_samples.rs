@@ -5,6 +5,8 @@ use uhd_rs::usrp::USRP;
 
 use uhd_rs::job::{Job, simple_rx};
 
+const DEFAULT_WARMUP_SEC:&str = "0.5";
+
 fn main() -> Result<(), &'static str> {
 
 	let matches = App::new("Rx Example for UHD_rs")
@@ -30,6 +32,10 @@ fn main() -> Result<(), &'static str> {
 		.arg(Arg::with_name("gain_db")
 			.long("gain_db")
 			.takes_value(true).required(true))
+		.arg(Arg::with_name("warmup_time_sec")
+			.long("warmup_time_sec")
+			.help("Time to discard before capture [seconds]")
+			.takes_value(true).required(false))
 		.arg(Arg::with_name("time_sec")
 			.long("time_sec")
 			.help("Time to capture [seconds]")
@@ -39,11 +45,11 @@ fn main() -> Result<(), &'static str> {
 	let sample_rate_sps = matches.value_of("sample_rate_sps").unwrap().parse().unwrap();
 
 	let job = simple_rx::SimpleRx {
-		center_freq_hz: matches.value_of("freq_hz").unwrap().parse().unwrap(),
 		sample_rate_sps, bandwidth_hz: sample_rate_sps,
-		gain_db: matches.value_of("gain_db").unwrap().parse().unwrap(),
-		time_warmup_sec: matches.value_of("time_sec").unwrap().parse().unwrap(),
-		time_sec: 0.0
+		center_freq_hz:  matches.value_of("freq_hz").unwrap().parse().unwrap(),
+		gain_db:         matches.value_of("gain_db").unwrap().parse().unwrap(),
+		time_warmup_sec: matches.value_of("warmup_time_sec").unwrap_or(DEFAULT_WARMUP_SEC).parse().unwrap(),
+		time_sec:        matches.value_of("time_sec").unwrap().parse().unwrap()
 	};
 
 	let mut usrp = USRP::new("")?;
