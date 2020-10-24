@@ -1,6 +1,9 @@
 
+// Types and functions on top of the UHD library
+pub mod job;
 
-// TODO: make private once development is done
+
+// Types and functions that directly reflect the UHD library
 pub mod ffi;
 
 pub mod rx_streamer;
