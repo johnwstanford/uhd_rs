@@ -5,7 +5,7 @@ use std::ffi::CString;
 use libc::{c_char, size_t};
 
 use crate::ffi::types::{TuneRequest, TuneResult};
-use crate::ffi::usrp::StreamArgs;
+use crate::ffi::usrp::{StreamArgs, StreamCmd};
 
 use crate::types::usrp_info::Info;
 use crate::rx_streamer::RxStreamer;
@@ -26,6 +26,17 @@ extern {
 	fn uhd_usrp_get_rx_bandwidth(h:usize, chan:size_t, bandwidth_out:&mut f64) -> isize;
 
 	fn uhd_usrp_get_rx_stream(h:usize, stream_args:&StreamArgs, h_out:usize) -> isize;
+
+}
+
+impl std::io::Read for super::USRP {
+
+	fn read(&mut self, buff: &mut [u8]) -> std::result::Result<usize, std::io::Error> { 
+
+		let rx_streamer:&mut RxStreamer = self.opt_rx_streamer.as_mut().unwrap();
+
+		rx_streamer.read(buff)
+	}
 
 }
 
@@ -51,7 +62,28 @@ impl super::USRP {
 		}
 	}
 
-	pub fn get_rx_stream<W: Any, U: Any>(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
+	pub fn start_continuous_stream<W: Any, U: Any>(&mut self, args:&str) -> Result<(), &'static str> {
+		if self.opt_rx_streamer.is_none() { self.get_rx_stream::<W, U>(args)?; }
+
+		let rx_streamer:&mut RxStreamer = self.opt_rx_streamer.as_mut().unwrap();
+
+		let stream_cmd_start = StreamCmd::start_continuous_now();
+		rx_streamer.stream(&stream_cmd_start)?;
+
+		Ok(())
+	}
+
+	pub fn stop_continuous_stream(&mut self) -> Result<(), &'static str> {
+
+		let rx_streamer:&mut RxStreamer = self.opt_rx_streamer.as_mut().unwrap();
+
+		let stream_cmd_stop  = StreamCmd::stop_continuous_now();
+		rx_streamer.stream(&stream_cmd_stop)?;
+
+		Ok(())
+	}
+
+	fn get_rx_stream<W: Any, U: Any>(&mut self, args:&str) -> Result<(), &'static str> {
 		// Note: This implementation assumes that you always want to create a new RxStreamer for every stream you want
 		// to create.  If you're going to be creating and destroying streams all the time, it might be more efficient to
 		// reuse instances of an RxStreamer.  If that ends up being the case, we could potentially create some kind of 
@@ -86,7 +118,9 @@ impl super::USRP {
 
 		rx_streamer.get_max_num_samps()?;
 
-		Ok(rx_streamer)
+		self.opt_rx_streamer = Some(rx_streamer);
+
+		Ok(())
 	}
 
 	pub fn rx_num_channels(&self) -> Result<usize, &'static str> {

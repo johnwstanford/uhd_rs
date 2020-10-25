@@ -5,7 +5,6 @@ use std::io::Read;
 use serde::{Serialize, Deserialize};
 
 use crate::ffi::types::{TuneRequest, TuneRequestPolicy};
-use crate::ffi::usrp::StreamCmd;
 use crate::usrp::USRP;
 
 use crate::job::Job;
@@ -38,24 +37,19 @@ impl Job<Vec<u8>> for SimpleRx {
 
 		self.configure(usrp)?;
 
-		let mut rx_streamer = usrp.get_rx_stream::<i16, i16>("")?;
-
-		let stream_cmd_start = StreamCmd::start_continuous_now();
-		let stream_cmd_stop  = StreamCmd::stop_continuous_now();
-
-		rx_streamer.stream(&stream_cmd_start)?;
+		usrp.start_continuous_stream::<i16, i16>("")?;
 
 		let warmup_samps:usize = (self.time_warmup_sec * self.sample_rate_sps) as usize;
 		let warmup_bytes:usize = warmup_samps * 4;
 		let mut warmup_waveform:Vec<u8> = vec![0u8; warmup_bytes];
-		rx_streamer.read_exact(&mut warmup_waveform).map_err(|_| "Unable to read warmup waveform from RX streamer")?;
+		usrp.read_exact(&mut warmup_waveform).map_err(|_| "Unable to read warmup waveform from RX streamer")?;
 
 		let total_samps:usize = (self.time_sec * self.sample_rate_sps) as usize;
 		let total_bytes:usize = total_samps * 4;
 		let mut waveform:Vec<u8> = vec![0u8; total_bytes];
-		rx_streamer.read_exact(&mut waveform).map_err(|_| "Unable to read waveform from RX streamer")?;
+		usrp.read_exact(&mut waveform).map_err(|_| "Unable to read waveform from RX streamer")?;
 
-		rx_streamer.stream(&stream_cmd_stop)?;
+		usrp.stop_continuous_stream()?;
 
 		Ok(waveform)
 	}

@@ -1,15 +1,17 @@
 
+use crate::rx_streamer::RxStreamer;
+
 #[link(name = "uhd")]
 extern {
 	fn uhd_usrp_free(uhd_usrp_handle: &mut usize);	
 }
 
-#[derive(Debug)]
 pub struct USRP {
 	handle:usize,
 	last_commanded_rate:Option<f64>,
 	last_commanded_gain:Option<f64>,
 	last_commanded_bw:Option<f64>,
+	opt_rx_streamer:Option<RxStreamer>,
 }
 
 mod impl_static;
