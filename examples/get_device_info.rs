@@ -14,8 +14,10 @@ fn main() -> Result<(), &'static str> {
 	println!("Found {} USRP Device(s)", devices.len());
 
 	for device in devices {
-		println!("Getting info for device {}", device);		
 		let usrp = USRP::new(&device)?;
+
+		println!("Getting info for device {}", device);		
+		println!("Number of motherboard(s): {}", usrp.num_mboards()?);		
 
 		let rx_info = usrp.get_rx_info(0)?;
 		println!("RX Info");
