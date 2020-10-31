@@ -17,7 +17,13 @@ fn main() -> Result<(), &'static str> {
 		let usrp = USRP::new(&device)?;
 
 		println!("Getting info for device {}", device);		
-		println!("Number of motherboard(s): {}", usrp.num_mboards()?);		
+
+		let num_mboards:usize = usrp.num_mboards()?;
+		println!("Number of motherboard(s): {}", num_mboards);	
+		for mboard_idx in 0..num_mboards {
+			println!("Motherboard {}:", mboard_idx);
+			println!(" Time source: {}", usrp.get_time_source(mboard_idx)?);
+		}
 
 		let rx_info = usrp.get_rx_info(0)?;
 		println!("RX Info");
