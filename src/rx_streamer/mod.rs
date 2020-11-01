@@ -4,8 +4,7 @@ use std::io::{Error, ErrorKind};
 
 use libc::{c_char, size_t};
 
-use crate::ffi::types::metadata::RxMetadataErrorCode;
-use crate::types::metadata::RxMetadata;
+use crate::types::metadata::{RxMetadata, RxMetadataErrorCode};
 use crate::usrp::StreamCmd;
 
 const BUFFER_SIZE:usize = 4096*8;

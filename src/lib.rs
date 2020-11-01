@@ -4,8 +4,6 @@ pub mod job;
 
 
 // Types and functions that directly reflect the UHD library
-pub mod ffi;
-
 pub mod rx_streamer;
 pub mod tx_streamer;
 pub mod usrp;
