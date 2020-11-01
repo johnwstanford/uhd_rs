@@ -77,7 +77,8 @@ impl SimpleRx {
 		usrp.set_rx_bandwidth(self.bandwidth_hz, DEFAULT_CHANNEL)?;
 		
 		// TODO: consider saving the tune result
-		let _tune_result = usrp.set_rx_freq(&tune_request, DEFAULT_CHANNEL)?;
+		let tune_result = usrp.set_rx_freq(&tune_request, DEFAULT_CHANNEL)?;
+		eprintln!("Tune Result: {:#?}", tune_result);
 
 		Ok(())
 	}

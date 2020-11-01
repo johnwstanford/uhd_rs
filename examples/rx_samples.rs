@@ -54,6 +54,8 @@ fn main() -> Result<(), &'static str> {
 
 	let mut usrp = USRP::new("")?;
 
+	println!("Clock source: {}", usrp.get_clock_source(0)?);
+
 	let waveform:Vec<u8> = job.execute(&mut usrp)?;
 
 	let filename = matches.value_of("filename")

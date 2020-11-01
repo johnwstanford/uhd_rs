@@ -44,12 +44,12 @@ extern {
 	fn uhd_usrp_get_time_source(h:usize, mboard:size_t, time_source_out:*const c_char, strbuffer_len:size_t) -> isize;
 	fn uhd_usrp_get_time_sources(h:usize, mboard:size_t, time_sources_out:&mut usize) -> isize;
 	
-	// uhd_error uhd_usrp_set_clock_source(uhd_usrp_handle h, const char* clock_source, size_t mboard)
+	fn uhd_usrp_set_clock_source(h:usize, clock_source:*const c_char, mboard:size_t) -> isize;
 	fn uhd_usrp_get_clock_source(h:usize, mboard:size_t, clock_source_out:*const c_char, strbuffer_len:size_t) -> isize;
 	fn uhd_usrp_get_clock_sources(h:usize, mboard:size_t, clock_sources_out:&mut usize) -> isize;
 	
-	// uhd_error uhd_usrp_set_clock_source_out(uhd_usrp_handle h, bool enb, size_t mboard)
-	// uhd_error uhd_usrp_set_time_source_out(uhd_usrp_handle h, bool enb, size_t mboard)
+	fn uhd_usrp_set_clock_source_out(h:usize, enb:bool, mboard:size_t) -> isize;
+	fn uhd_usrp_set_time_source_out(h:usize, enb:bool, mboard:size_t) -> isize;
 
 	fn uhd_usrp_free(uhd_usrp_handle: &mut usize);	
 }
@@ -152,11 +152,33 @@ impl USRP {
 
 	}
 
+	pub fn set_clock_source(&mut self, clock_source:&str, mboard:usize) -> Result<(), &'static str> {
+		let clock_source_c:CString = CString::new(clock_source).unwrap();
+		match unsafe { uhd_usrp_set_clock_source(self.handle, clock_source_c.as_ptr(), mboard) } {
+			0 => Ok(()),
+			_ => Err("Unable to set clock source")
+		}
+	}
+
 	pub fn get_clock_sources(&self, mboard:usize) -> Result<Vec<String>, &'static str> {
 		let mut string_vec = StringVector::new()?;
 		match unsafe { uhd_usrp_get_clock_sources(self.handle, mboard, &mut string_vec.handle) } {
 			0 => Ok(string_vec.get_rust_vec()?),
 			_ => Err("Unable to get clock sources")
+		}
+	}
+
+	pub fn set_clock_source_out(&mut self, mboard:usize, enb:bool) -> Result<(), &'static str> {
+		match unsafe { uhd_usrp_set_clock_source_out(self.handle, enb, mboard) } {
+			0 => Ok(()),
+			_ => Err("Unable to set clock source out")
+		}
+	}
+
+	pub fn set_time_source_out(&mut self, mboard:usize, enb:bool) -> Result<(), &'static str> {
+		match unsafe { uhd_usrp_set_time_source_out(self.handle, enb, mboard) } {
+			0 => Ok(()),
+			_ => Err("Unable to set clock source out")
 		}
 	}
 
