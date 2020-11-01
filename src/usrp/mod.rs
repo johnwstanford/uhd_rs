@@ -4,6 +4,7 @@ use std::ffi::CString;
 use libc::{size_t, c_char};
 
 use crate::rx_streamer::RxStreamer;
+use crate::types::string_vector::StringVector;
 
 #[link(name = "uhd")]
 extern {
@@ -39,8 +40,10 @@ extern {
 
 	fn uhd_usrp_get_num_mboards(h:usize, num_mboards_out:&mut size_t) -> isize;
 	// uhd_error uhd_usrp_set_time_source(uhd_usrp_handle h, const char* time_source, size_t mboard)
+	
 	fn uhd_usrp_get_time_source(h:usize, mboard:size_t, time_source_out:*const c_char, strbuffer_len:size_t) -> isize;
-	// uhd_error uhd_usrp_get_time_sources(uhd_usrp_handle h, size_t mboard, uhd_string_vector_handle *time_sources_out)
+	fn uhd_usrp_get_time_sources(h:usize, mboard:size_t, time_sources_out:&mut usize) -> isize;
+	
 	// uhd_error uhd_usrp_set_clock_source(uhd_usrp_handle h, const char* clock_source, size_t mboard)
 	// uhd_error uhd_usrp_get_clock_source(uhd_usrp_handle h, size_t mboard, char* clock_source_out, size_t strbuffer_len)
 	// uhd_error uhd_usrp_get_clock_sources(uhd_usrp_handle h, size_t mboard, uhd_string_vector_handle *clock_sources_out)
@@ -124,6 +127,14 @@ impl USRP {
             _ => Err("Unable to index into string vector")
         }
 
+	}
+
+	pub fn get_time_sources(&self, mboard:usize) -> Result<Vec<String>, &'static str> {
+		let mut string_vec = StringVector::new()?;
+		match unsafe { uhd_usrp_get_time_sources(self.handle, mboard, &mut string_vec.handle) } {
+			0 => Ok(string_vec.get_rust_vec()?),
+			_ => Err("Unable to get time sources")
+		}
 	}
 
 }

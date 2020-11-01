@@ -22,7 +22,7 @@ fn main() -> Result<(), &'static str> {
 		println!("Number of motherboard(s): {}", num_mboards);	
 		for mboard_idx in 0..num_mboards {
 			println!("Motherboard {}:", mboard_idx);
-			println!(" Time source: {}", usrp.get_time_source(mboard_idx)?);
+			println!(" Time source: {} ({:?})", usrp.get_time_source(mboard_idx)?, usrp.get_time_sources(mboard_idx)?);
 		}
 
 		let rx_info = usrp.get_rx_info(0)?;
