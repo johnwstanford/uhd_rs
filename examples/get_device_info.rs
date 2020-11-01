@@ -22,7 +22,8 @@ fn main() -> Result<(), &'static str> {
 		println!("Number of motherboard(s): {}", num_mboards);	
 		for mboard_idx in 0..num_mboards {
 			println!("Motherboard {}:", mboard_idx);
-			println!(" Time source: {} ({:?})", usrp.get_time_source(mboard_idx)?, usrp.get_time_sources(mboard_idx)?);
+			println!(" Time source:  {} ({:?})", usrp.get_time_source(mboard_idx)?, usrp.get_time_sources(mboard_idx)?);
+			println!(" Clock source: {} ({:?})", usrp.get_clock_source(mboard_idx)?, usrp.get_clock_sources(mboard_idx)?);
 		}
 
 		let rx_info = usrp.get_rx_info(0)?;
@@ -49,7 +50,7 @@ fn main() -> Result<(), &'static str> {
 		println!("  Serial: {}", tx_info.serial()?);
 		println!("  Antenna: {}", tx_info.antenna()?);
 
-		println!("  Num channles: {}", usrp.tx_num_channels()?);
+		println!("  Num channels: {}", usrp.tx_num_channels()?);
 	}
 
  	Ok(())
