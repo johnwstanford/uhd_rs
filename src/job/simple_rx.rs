@@ -4,7 +4,7 @@ use std::io::Read;
 
 use serde::{Serialize, Deserialize};
 
-use crate::ffi::types::{TuneRequest, TuneRequestPolicy};
+use crate::types::{TuneRequest, TuneRequestPolicy};
 use crate::usrp::USRP;
 
 use crate::job::Job;

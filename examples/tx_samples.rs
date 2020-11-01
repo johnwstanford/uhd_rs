@@ -4,7 +4,7 @@ use std::ffi::CString;
 
 use clap::{Arg, App};
 
-use uhd_rs::ffi::types::{TuneRequest, TuneRequestPolicy};
+use uhd_rs::types::{TuneRequest, TuneRequestPolicy};
 use uhd_rs::usrp::USRP;
 
 fn main() -> Result<(), &'static str> {

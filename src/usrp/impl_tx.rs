@@ -4,11 +4,10 @@ use std::ffi::CString;
 
 use libc::{c_char, size_t};
 
-use crate::ffi::types::{TuneRequest, TuneResult};
-
 use crate::tx_streamer::TxStreamer;
-use crate::types::usrp_info::Info;
+use crate::types::{TuneRequest, TuneResult};
 use crate::types::string_vector::StringVector;
+use crate::types::usrp_info::Info;
 use crate::usrp::StreamArgs;
 
 #[link(name = "uhd")]

@@ -4,9 +4,8 @@ use std::ffi::CString;
 
 use libc::{c_char, size_t};
 
-use crate::ffi::types::{TuneRequest, TuneResult};
-
 use crate::rx_streamer::RxStreamer;
+use crate::types::{TuneRequest, TuneResult};
 use crate::types::usrp_info::Info;
 use crate::usrp::{StreamArgs, StreamCmd};
 
