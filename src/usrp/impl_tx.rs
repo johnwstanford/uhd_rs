@@ -5,14 +5,40 @@ use std::ffi::CString;
 use libc::{c_char, size_t};
 
 use crate::ffi::types::{TuneRequest, TuneResult};
-use crate::ffi::usrp::StreamArgs;
 
+use crate::tx_streamer::TxStreamer;
 use crate::types::usrp_info::Info;
 use crate::types::string_vector::StringVector;
-use crate::tx_streamer::TxStreamer;
+use crate::usrp::StreamArgs;
 
 #[link(name = "uhd")]
 extern {
+
+	// uhd_error uhd_usrp_set_tx_subdev_spec(uhd_usrp_handle h, uhd_subdev_spec_handle subdev_spec, size_t mboard)
+	// uhd_error uhd_usrp_get_tx_subdev_spec(uhd_usrp_handle h, size_t mboard, uhd_subdev_spec_handle subdev_spec_out)
+	// uhd_error uhd_usrp_get_tx_subdev_name(uhd_usrp_handle h, size_t chan, char* tx_subdev_name_out, size_t strbuffer_len)
+	// uhd_error uhd_usrp_get_tx_rates(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle rates_out)
+	// uhd_error uhd_usrp_get_tx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
+	// uhd_error uhd_usrp_get_fe_tx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
+	// uhd_error uhd_usrp_get_tx_lo_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *tx_lo_names_out)
+	// uhd_error uhd_usrp_set_tx_lo_source(uhd_usrp_handle h, const char* src, const char* name, size_t chan)
+	// uhd_error uhd_usrp_get_tx_lo_source(uhd_usrp_handle h, const char* name, size_t chan, char* tx_lo_source_out, size_t strbuffer_len)
+	// uhd_error uhd_usrp_get_tx_lo_sources(uhd_usrp_handle h, const char* name, size_t chan, uhd_string_vector_handle *tx_lo_sources_out)
+	// uhd_error uhd_usrp_set_tx_lo_export_enabled(uhd_usrp_handle h, bool enabled, const char* name, size_t chan)
+	// uhd_error uhd_usrp_get_tx_lo_export_enabled(uhd_usrp_handle h, const char* name, size_t chan, bool* result_out)
+	// uhd_error uhd_usrp_set_tx_lo_freq(uhd_usrp_handle h, double freq, const char* name, size_t chan, double* coerced_freq_out)
+	// uhd_error uhd_usrp_get_tx_lo_freq(uhd_usrp_handle h, const char* name, size_t chan, double* tx_lo_freq_out)
+	// uhd_error uhd_usrp_set_normalized_tx_gain(uhd_usrp_handle h, double gain, size_t chan)
+	// uhd_error uhd_usrp_get_tx_gain_range(uhd_usrp_handle h, const char* name, size_t chan, uhd_meta_range_handle gain_range_out)
+	// uhd_error uhd_usrp_get_normalized_tx_gain(uhd_usrp_handle h, size_t chan, double *gain_out)
+	// uhd_error uhd_usrp_get_tx_gain_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *gain_names_out)
+	// uhd_error uhd_usrp_set_tx_antenna(uhd_usrp_handle h, const char* ant, size_t chan)
+	// uhd_error uhd_usrp_get_tx_antenna(uhd_usrp_handle h, size_t chan, char* ant_out, size_t strbuffer_len)
+	// uhd_error uhd_usrp_set_tx_bandwidth(uhd_usrp_handle h, double bandwidth, size_t chan)
+	// uhd_error uhd_usrp_get_tx_bandwidth(uhd_usrp_handle h, size_t chan, double *bandwidth_out)
+	// uhd_error uhd_usrp_get_tx_bandwidth_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle bandwidth_range_out)
+	// uhd_error uhd_usrp_get_tx_sensor(uhd_usrp_handle h, const char* name, size_t chan, uhd_sensor_value_handle *sensor_value_out)
+	// uhd_error uhd_usrp_get_tx_sensor_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *sensor_names_out)
 
 	fn uhd_usrp_get_tx_info(h:usize, chan:size_t, info_out:&mut Info) -> isize;
 	fn uhd_usrp_get_tx_antennas(h:usize, chan:size_t, antennas_out:&mut usize) -> isize;

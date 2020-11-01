@@ -8,6 +8,9 @@ use crate::types::metadata::TxMetadata;
 #[link(name = "uhd")]
 extern {
 	
+	// uhd_error uhd_tx_streamer_num_channels(uhd_tx_streamer_handle h, size_t *num_channels_out)
+	// uhd_error uhd_tx_streamer_recv_async_msg(uhd_tx_streamer_handle h, uhd_async_metadata_handle *md, double timeout, bool *valid)
+
 	fn uhd_tx_streamer_make(h: &mut usize) -> isize;
 	fn uhd_tx_streamer_free(h: &mut usize) -> isize;
 	fn uhd_tx_streamer_max_num_samps(h:usize, max_num_samps_out:&mut size_t) -> isize;

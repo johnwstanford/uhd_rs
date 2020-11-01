@@ -4,14 +4,17 @@ use std::io::{Error, ErrorKind};
 
 use libc::{c_char, size_t};
 
-use crate::ffi::usrp::StreamCmd;
 use crate::ffi::types::metadata::RxMetadataErrorCode;
 use crate::types::metadata::RxMetadata;
+use crate::usrp::StreamCmd;
 
 const BUFFER_SIZE:usize = 4096*8;
 
 #[link(name = "uhd")]
 extern {
+
+	// uhd_error uhd_rx_streamer_num_channels(uhd_rx_streamer_handle h, size_t *num_channels_out)
+
 	fn uhd_rx_streamer_make(uhd_rx_streamer_handle: &mut usize) -> isize;
 	fn uhd_rx_streamer_free(uhd_rx_streamer_handle: &mut usize) -> isize;
 	fn uhd_rx_streamer_max_num_samps(h:usize, max_num_samps_out:&mut size_t) -> isize;
