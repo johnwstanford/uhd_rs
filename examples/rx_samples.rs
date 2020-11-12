@@ -32,6 +32,9 @@ fn main() -> Result<(), &'static str> {
 		.arg(Arg::with_name("gain_db")
 			.long("gain_db")
 			.takes_value(true).required(true))
+		.arg(Arg::with_name("args")
+			.long("args")
+			.takes_value(true))
 		.arg(Arg::with_name("warmup_time_sec")
 			.long("warmup_time_sec")
 			.help("Time to discard before capture [seconds]")
@@ -52,7 +55,7 @@ fn main() -> Result<(), &'static str> {
 		time_sec:        matches.value_of("time_sec").unwrap().parse().unwrap()
 	};
 
-	let mut usrp = USRP::new("")?;
+	let mut usrp = USRP::new(matches.value_of("args").unwrap_or(""))?;
 
 	println!("Clock source: {}", usrp.get_clock_source(0)?);
 

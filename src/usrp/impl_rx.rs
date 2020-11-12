@@ -6,6 +6,7 @@ use libc::{c_char, size_t};
 
 use crate::rx_streamer::RxStreamer;
 use crate::types::{TuneRequest, TuneResult};
+use crate::types::string_vector::StringVector;
 use crate::types::usrp_info::Info;
 use crate::usrp::{StreamArgs, StreamCmd};
 
@@ -32,7 +33,7 @@ extern {
 	// uhd_error uhd_usrp_get_rx_gain_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *gain_names_out)
 	// uhd_error uhd_usrp_set_rx_antenna(uhd_usrp_handle h, const char* ant, size_t chan)
 	// uhd_error uhd_usrp_get_rx_antenna(uhd_usrp_handle h, size_t chan, char* ant_out, size_t strbuffer_len)
-	// uhd_error uhd_usrp_get_rx_antennas(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *antennas_out)
+
 	// uhd_error uhd_usrp_get_rx_sensor_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *sensor_names_out)
 	// uhd_error uhd_usrp_get_rx_bandwidth_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle bandwidth_range_out)
 	// uhd_error uhd_usrp_get_rx_sensor(uhd_usrp_handle h, const char* name, size_t chan, uhd_sensor_value_handle *sensor_value_out)
@@ -41,6 +42,8 @@ extern {
 
 	fn uhd_usrp_get_rx_info(h:usize, chan:size_t, info_out:&mut Info) -> isize;
 	fn uhd_usrp_get_rx_num_channels(h:usize, num_channels_out:&mut size_t) -> isize;
+
+	fn uhd_usrp_get_rx_antennas(h:usize, chan:size_t, uhd_string_vector_handle:&mut usize) -> isize;
 
 	fn uhd_usrp_set_rx_rate(h:usize, rate:f64, chan:size_t) -> isize;
 	fn uhd_usrp_get_rx_rate(h:usize, chan:size_t, rate_out:&mut f64) -> isize;
@@ -149,6 +152,7 @@ impl super::USRP {
 		Ok(())
 	}
 
+	// Get information
 	pub fn rx_num_channels(&self) -> Result<usize, &'static str> {
 		let mut ans:usize = 0;
 		match unsafe { uhd_usrp_get_rx_num_channels(self.handle, &mut ans) } {
@@ -165,6 +169,16 @@ impl super::USRP {
 		}
 	}
 
+	pub fn get_rx_antennas(&self, chan:usize) -> Result<Vec<String>, &'static str> {
+		let mut string_vec = StringVector::new()?;
+		match unsafe { uhd_usrp_get_rx_antennas(self.handle, chan, &mut string_vec.handle) } {
+			0 => Ok(string_vec.get_rust_vec()?),
+			_ => Err("Unable to get RX antennas")
+		}
+
+	} 
+
+	// Get or set configuration values
 	pub fn set_rx_rate(&mut self, rate:f64, chan:usize) -> Result<(), &'static str> {
 		if self.last_commanded_rate == Some(rate) { 
 			Ok(())
