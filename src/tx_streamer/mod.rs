@@ -1,9 +1,12 @@
 
 use std::ffi::CString;
+use std::io::{Error, ErrorKind};
 
 use libc::{c_char, size_t};
 
 use crate::types::metadata::TxMetadata;
+
+type Sample = (i16, i16);
 
 #[link(name = "uhd")]
 extern {
@@ -26,6 +29,33 @@ pub struct TxStreamer {
 	max_num_samps:usize,	// Max number of samples per buffer per packet
 	timeout:f64,
 	tx_metadata:TxMetadata
+}
+
+impl std::io::Write for TxStreamer {
+
+	fn write(&mut self, buffer:&[u8]) -> Result<usize, std::io::Error> { 
+		let bytes_per_sample:usize = std::mem::size_of::<Sample>();
+		let num_bytes:usize = buffer.len();
+
+		if num_bytes % bytes_per_sample == 0 {
+
+			let num_samples:usize = num_bytes / bytes_per_sample;
+
+			let wf_u:*const u8 = &buffer[0];
+			let wf_s:*const Sample = wf_u as *const _;
+			let samp_buffer:&[Sample] = unsafe { std::slice::from_raw_parts(wf_s, num_samples) };
+
+			self.send_sc16(samp_buffer).map_err(|e| Error::new(ErrorKind::Interrupted, e))
+
+		} else {
+			Err(Error::new(ErrorKind::Interrupted, "Wrong sized input for write()"))
+		}
+	}
+
+	fn flush(&mut self) -> Result<(), std::io::Error> { 
+		Ok(())
+	}
+
 }
 
 impl TxStreamer {
@@ -52,21 +82,31 @@ impl TxStreamer {
 		}
 	}
 
-	pub fn send_sc16(&mut self, buffer:&[(i16, i16)]) -> Result<usize, &'static str> {
-		if buffer.len() > self.max_num_samps {
-			Err("Supplied slice is too large")
-		} else {
-			let buff_ptr:*const u8 = buffer.as_ptr() as *const u8;
-			let mut items_sent = 0;
+	pub fn send_sc16(&mut self, buffer:&[Sample]) -> Result<usize, &'static str> {
+		let mut start_idx:usize  = 0;
+		let mut items_sent:usize = 0;
+
+		while start_idx < buffer.len() {
+
+			let num_samps:usize = std::cmp::min(self.max_num_samps, buffer.len() - start_idx);
+
+			let start_ptr:*const (i16, i16) = &buffer[start_idx];
+			let buff_ptr:*const u8 = start_ptr as *const u8;
+			let mut items_sent_this_time = 0;
 			let result = unsafe { 
-				uhd_tx_streamer_send(self.handle, &buff_ptr, buffer.len(), 
-					&self.tx_metadata.handle, self.timeout, &mut items_sent) 
+				uhd_tx_streamer_send(self.handle, &buff_ptr, num_samps, 
+					&self.tx_metadata.handle, self.timeout, &mut items_sent_this_time) 
 			};
+
 			match result {
-				0 => Ok(items_sent),
-				_ => Err("Unable to send using TxStreamer")
+				0 => items_sent += items_sent_this_time,
+				_ => return Err("Unable to send using TxStreamer")
 			}
+
+			start_idx += self.max_num_samps;
 		}
+
+		Ok(items_sent)
 	}
 
 	pub fn tx_metadata_time_spec(&self) -> Result<(i64, f64), &'static str> {
