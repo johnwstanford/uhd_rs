@@ -74,7 +74,13 @@ impl TxMetadata {
 	pub fn new() -> Result<TxMetadata, &'static str> {
 		let mut handle:usize = 0;
 
-		let result = unsafe { uhd_tx_metadata_make(&mut handle, false, 0, 0.1, true, false) };
+		let has_time_spec:bool = false;
+		let full_secs:i64 = 0;
+		let frac_secs:f64 = 0.0;
+		let start_of_burst:bool = true;
+		let end_of_burst:bool = false;
+
+		let result = unsafe { uhd_tx_metadata_make(&mut handle, has_time_spec, full_secs, frac_secs, start_of_burst, end_of_burst) };
 
 		match result {
 			0 => Ok(TxMetadata{ handle }),
