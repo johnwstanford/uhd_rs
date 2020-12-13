@@ -83,14 +83,14 @@ impl TxStreamer {
 	}
 
 	pub fn send_sc16(&mut self, buffer:&[Sample]) -> Result<usize, &'static str> {
-		let mut start_idx:usize  = 0;
+
 		let mut items_sent:usize = 0;
 
-		while start_idx < buffer.len() {
+		while items_sent < buffer.len() {
 
-			let num_samps:usize = std::cmp::min(self.max_num_samps, buffer.len() - start_idx);
+			let num_samps:usize = std::cmp::min(self.max_num_samps, buffer.len() - items_sent);
 
-			let start_ptr:*const (i16, i16) = &buffer[start_idx];
+			let start_ptr:*const (i16, i16) = &buffer[items_sent];
 			let buff_ptr:*const u8 = start_ptr as *const u8;
 			let mut items_sent_this_time = 0;
 			let result = unsafe { 
@@ -103,7 +103,6 @@ impl TxStreamer {
 				_ => return Err("Unable to send using TxStreamer")
 			}
 
-			start_idx += self.max_num_samps;
 		}
 
 		Ok(items_sent)
