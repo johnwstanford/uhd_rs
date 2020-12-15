@@ -4,6 +4,7 @@ use std::ffi::CString;
 
 use libc::{c_char, size_t};
 
+use crate::check_err;
 use crate::rx_streamer::RxStreamer;
 use crate::types::{TuneRequest, TuneResult};
 use crate::types::string_vector::StringVector;
@@ -73,21 +74,16 @@ impl super::USRP {
 
 	pub fn get_rx_bandwidth(&self, chan:usize) -> Result<f64, &'static str> {
 		let mut ans:f64 = 0.0;
-		match unsafe { uhd_usrp_get_rx_bandwidth(self.handle, chan, &mut ans) } {
-			0 => Ok(ans),
-			_ => Err("Unable to get RX bandwidth")
-		}
+		let result = unsafe { uhd_usrp_get_rx_bandwidth(self.handle, chan, &mut ans) };
+		check_err(ans, result)
 	}
 
 	pub fn set_rx_bandwidth(&mut self, bandwidth:f64, chan:usize) -> Result<(), &'static str> {
 		if self.last_commanded_bw == Some(bandwidth) { 
 			Ok(())
 		} else {
-			self.last_commanded_bw = Some(bandwidth);		
-			match unsafe { uhd_usrp_set_rx_bandwidth(self.handle, bandwidth, chan) } {
-				0 => Ok(()),
-				_ => Err("Unable to set RX bandwidth")
-			}
+			self.last_commanded_bw = Some(bandwidth);
+			check_err((), unsafe { uhd_usrp_set_rx_bandwidth(self.handle, bandwidth, chan) })		
 		}
 	}
 
@@ -154,28 +150,21 @@ impl super::USRP {
 
 	// Get information
 	pub fn rx_num_channels(&self) -> Result<usize, &'static str> {
-		let mut ans:usize = 0;
-		match unsafe { uhd_usrp_get_rx_num_channels(self.handle, &mut ans) } {
-			0 => Ok(ans),
-			_ => Err("Unable to get number of RX channels")
-		}
+		let mut ans = 0;
+		let result = unsafe { uhd_usrp_get_rx_num_channels(self.handle, &mut ans) };
+		check_err(ans, result)
 	}
 
 	pub fn get_rx_info(&self, chan:usize) -> Result<Info, &'static str> {
 		let mut ans = Info::null();
-		match unsafe { uhd_usrp_get_rx_info(self.handle, chan, &mut ans) } {
-			0 => Ok(ans),
-			_ => Err("Unable to get RX info")
-		}
+		let result = unsafe { uhd_usrp_get_rx_info(self.handle, chan, &mut ans) };
+		check_err(ans, result)
 	}
 
 	pub fn get_rx_antennas(&self, chan:usize) -> Result<Vec<String>, &'static str> {
 		let mut string_vec = StringVector::new()?;
-		match unsafe { uhd_usrp_get_rx_antennas(self.handle, chan, &mut string_vec.handle) } {
-			0 => Ok(string_vec.get_rust_vec()?),
-			_ => Err("Unable to get RX antennas")
-		}
-
+		let result = unsafe { uhd_usrp_get_rx_antennas(self.handle, chan, &mut string_vec.handle) };
+		check_err(string_vec.get_rust_vec()?, result)
 	} 
 
 	// Get or set configuration values
@@ -184,19 +173,14 @@ impl super::USRP {
 			Ok(())
 		} else {
 			self.last_commanded_rate = Some(rate);
-			match unsafe { uhd_usrp_set_rx_rate(self.handle, rate, chan) } {
-				0 => Ok(()),
-				_ => Err("Unable to set RX rate")
-			}			
+			check_err((), unsafe { uhd_usrp_set_rx_rate(self.handle, rate, chan) })			
 		}
 	}
 
 	pub fn get_rx_rate(&self, chan:usize) -> Result<f64, &'static str> {
 		let mut ans:f64 = 0.0;
-		match unsafe { uhd_usrp_get_rx_rate(self.handle, chan, &mut ans) } {
-			0 => Ok(ans),
-			_ => Err("Unable to get RX rate")
-		}
+		let result = unsafe { uhd_usrp_get_rx_rate(self.handle, chan, &mut ans) };
+		check_err(ans, result)
 	}
 
 	pub fn set_rx_gain(&mut self, gain:f64, chan:usize, gain_name:&str) -> Result<(), &'static str> {
@@ -205,36 +189,27 @@ impl super::USRP {
 		} else {
 			self.last_commanded_gain = Some(gain);
 			let gain_name_c:CString = CString::new(gain_name).unwrap();
-			match unsafe { uhd_usrp_set_rx_gain(self.handle, gain, chan, gain_name_c.as_ptr()) } {
-				0 => Ok(()),
-				_ => Err("Unable to set RX gain")
-			}
+			check_err((), unsafe { uhd_usrp_set_rx_gain(self.handle, gain, chan, gain_name_c.as_ptr()) })
 		}
 	}
 
 	pub fn get_rx_gain(&self, chan:usize, gain_name:&str) -> Result<f64, &'static str> {
 		let gain_name_c:CString = CString::new(gain_name).unwrap();
 		let mut gain_out:f64 = 0.0;
-		match unsafe { uhd_usrp_get_rx_gain(self.handle, chan, gain_name_c.as_ptr(), &mut gain_out) } {
-			0 => Ok(gain_out),
-			_ => Err("Unable to get RX gain")
-		}
+		let result = unsafe { uhd_usrp_get_rx_gain(self.handle, chan, gain_name_c.as_ptr(), &mut gain_out) };
+		check_err(gain_out, result)
 	}
 
 	pub fn set_rx_freq(&mut self, tune_request:&TuneRequest, chan:usize) -> Result<TuneResult, &'static str> {
 		let mut tune_result:TuneResult = TuneResult::default();
-		match unsafe { uhd_usrp_set_rx_freq(self.handle, tune_request, chan, &mut tune_result) } {
-			0 => Ok(tune_result),
-			_ => Err("Unable to set RX freq")
-		}
+		let result = unsafe { uhd_usrp_set_rx_freq(self.handle, tune_request, chan, &mut tune_result) };
+		check_err(tune_result, result)
 	}
 
 	pub fn get_rx_freq(&self, chan:usize) -> Result<f64, &'static str> {
 		let mut freq_out:f64 = 0.0;
-		match unsafe { uhd_usrp_get_rx_freq(self.handle, chan, &mut freq_out) } {
-			0 => Ok(freq_out),
-			_ => Err("Unable to get RX freq")
-		}
+		let result = unsafe { uhd_usrp_get_rx_freq(self.handle, chan, &mut freq_out) };
+		check_err(freq_out, result)
 	}
 
 

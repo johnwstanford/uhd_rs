@@ -1,4 +1,11 @@
 
+fn check_err<T>(t:T, result:isize) -> Result<T, &'static str> {
+	match result {
+		0 => Ok(t),
+		_ => Err("Failed return value check")
+	}
+}
+
 // Types and functions on top of the UHD library
 pub mod job;
 
