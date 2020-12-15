@@ -37,19 +37,19 @@ impl Job<Vec<u8>> for SimpleRx {
 
 		self.configure(usrp)?;
 
-		usrp.start_continuous_stream::<i16, i16>("")?;
+		let mut rx_streamer = usrp.start_continuous_stream::<i16, i16>("")?;
 
 		let warmup_samps:usize = (self.time_warmup_sec * self.sample_rate_sps) as usize;
 		let warmup_bytes:usize = warmup_samps * 4;
 		let mut warmup_waveform:Vec<u8> = vec![0u8; warmup_bytes];
-		usrp.read_exact(&mut warmup_waveform).map_err(|_| "Unable to read warmup waveform from RX streamer")?;
+		rx_streamer.read_exact(&mut warmup_waveform).map_err(|_| "Unable to read warmup waveform from RX streamer")?;
 
 		let total_samps:usize = (self.time_sec * self.sample_rate_sps) as usize;
 		let total_bytes:usize = total_samps * 4;
 		let mut waveform:Vec<u8> = vec![0u8; total_bytes];
-		usrp.read_exact(&mut waveform).map_err(|_| "Unable to read waveform from RX streamer")?;
+		rx_streamer.read_exact(&mut waveform).map_err(|_| "Unable to read waveform from RX streamer")?;
 
-		usrp.stop_continuous_stream()?;
+		// When the RxStreamer goes out of scope and gets dropped, it'll call stop_continuous_stream()
 
 		Ok(waveform)
 	}

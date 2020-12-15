@@ -3,7 +3,6 @@ use std::ffi::CString;
 
 use libc::{size_t, c_char};
 
-use crate::rx_streamer::RxStreamer;
 use crate::types::string_vector::StringVector;
 
 #[link(name = "uhd")]
@@ -59,7 +58,6 @@ pub struct USRP {
 	last_commanded_rate:Option<f64>,
 	last_commanded_gain:Option<f64>,
 	last_commanded_bw:Option<f64>,
-	opt_rx_streamer:Option<RxStreamer>,
 }
 
 #[repr(C)]

@@ -114,6 +114,13 @@ impl RxStreamer {
 impl std::ops::Drop for RxStreamer {
 
 	fn drop(&mut self) {
+		// Issue a stop command before dropping
+		let stream_cmd_stop  = StreamCmd::stop_continuous_now();
+		match self.stream(&stream_cmd_stop) {
+			Ok(_) => (),
+			Err(_) => eprintln!("WARN: Error when calling stop_continuous_now in RxStreamer::drop")
+		}
+
 		unsafe { uhd_rx_streamer_free(&mut self.handle); }
 	}
 
