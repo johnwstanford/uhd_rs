@@ -7,8 +7,6 @@ use libc::{c_char, size_t};
 use crate::types::metadata::{RxMetadata, RxMetadataErrorCode};
 use crate::usrp::StreamCmd;
 
-const BUFFER_SIZE:usize = 4096*8;
-
 #[link(name = "uhd")]
 extern {
 
@@ -25,7 +23,7 @@ extern {
 pub struct RxStreamer {
 	handle:usize,
 	max_num_samps:usize,	// Max number of samples per buffer per packet
-	pub buffer:[u8; BUFFER_SIZE],	// TODO: consider putting this on the heap
+	// buffer:[u8; BUFFER_SIZE],
 	timeout:f64,
 	rx_metadata:RxMetadata,
 	overflow_count:usize
@@ -63,10 +61,9 @@ impl RxStreamer {
 
 		let mut handle:usize = 0;
 		let rx_metadata = RxMetadata::new()?;
-		let buffer = [0u8; BUFFER_SIZE];
 
 		match unsafe { uhd_rx_streamer_make(&mut handle) } {
-			0 => Ok(RxStreamer{ handle, max_num_samps:0, buffer,
+			0 => Ok(RxStreamer{ handle, max_num_samps:0,
 				timeout: 3.0, rx_metadata, overflow_count:0}),
 			_ => Err("Unable to create RX streamer")
 		}
@@ -76,10 +73,7 @@ impl RxStreamer {
 
 	pub fn get_max_num_samps(&mut self) -> Result<usize, &'static str> {
 		match unsafe { uhd_rx_streamer_max_num_samps(self.handle, &mut self.max_num_samps) } {
-			0 => match self.max_num_samps {
-				n if n > self.buffer.len() => Err("Statically-sized buffer is too small"),
-				n => Ok(n)
-			},
+			0 => Ok(self.max_num_samps),
 			_ => Err("Unable to get sample buffer size for the newly-created RxStream")
 		}
 	}
