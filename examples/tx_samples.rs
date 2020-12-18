@@ -85,6 +85,9 @@ fn main() -> Result<(), &'static str> {
 
 	let mut samps_sent:usize = 0;
 
+	let t0_sec:i64 = 5;
+	println!("Start transmission at {} [sec] USRP time", t0_sec);
+
 	while samps_sent < num_samps {
 		let omega:f64 = mod_width_rad_per_sec * (mod_freq_rad_per_sec*t).cos();
 
@@ -95,9 +98,13 @@ fn main() -> Result<(), &'static str> {
 			phase += dt*omega;
 		}
 
-		tx_streamer.send_sc16(&buffer)?;
+		let full_secs:i64 = t as i64;
+		let frac_secs:f64 = t - (full_secs as f64);
+
+		tx_streamer.send_sc16(&buffer, Some((full_secs + t0_sec, frac_secs)))?;
 		samps_sent += buffer.len();
 	}
+	println!("Complete at {:?} USRP time", usrp.get_time_now(0));
 
 
  	Ok(())

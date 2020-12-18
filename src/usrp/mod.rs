@@ -3,7 +3,28 @@ use std::ffi::CString;
 
 use libc::{size_t, c_char};
 
+use crate::check_err;
 use crate::types::string_vector::StringVector;
+
+/*
+	Usage of time_spec_t:
+	- In StreamCmd to tell the streamer when to stream if not now (relative to the time the streamer was created?)
+	- In RxMetadata to give the time of the first sample (relative to the time the streamer was created?)
+	- In TxMetadata to give the time of the first sample (relative to the time the streamer was created?)
+	- In AsyncMetadata (not implemented in Rust yet)
+	- uhd::rfnoc::set_time_now
+	- uhd::rfnox::set_time_next_pps
+	- uhd::rfnoc::get_time_now
+	- uhd::rfnoc::get_time_last_pps
+	- FPGA control and communication (see block_ctrl_base.hpp)
+	- Generic daughterboard interface (see dboard_iface.hpp)
+	- uhd::usrp::multi_usrp::get_time_now gives "current USRP time"
+	- uhd::usrp::multi_usrp::get_time_last_pps
+	- uhd::usrp::multi_usrp::set_time_now
+	- uhd::usrp::multi_usrp::set_time_next_pps
+	- uhd::usrp::multi_usrp::set_time_unknown_pps
+	- uhd::usrp::multi_usrp::set_command_time
+*/
 
 #[link(name = "uhd")]
 extern {
@@ -13,7 +34,10 @@ extern {
 	// uhd_error uhd_usrp_get_master_clock_rate(uhd_usrp_handle h, size_t mboard, double *clock_rate_out)
 	// uhd_error uhd_usrp_get_pp_string(uhd_usrp_handle h, char* pp_string_out, size_t strbuffer_len)
 	// uhd_error uhd_usrp_get_mboard_name(uhd_usrp_handle h, size_t mboard, char* mboard_name_out, size_t strbuffer_len)
+
 	// uhd_error uhd_usrp_get_time_now(uhd_usrp_handle h, size_t mboard, int64_t *full_secs_out, double *frac_secs_out)
+	fn uhd_usrp_get_time_now(h:usize, mboard:size_t, full_secs_out:&mut i64, frac_secs_out:&mut f64) -> isize;
+
 	// uhd_error uhd_usrp_get_time_last_pps(uhd_usrp_handle h, size_t mboard, int64_t *full_secs_out, double *frac_secs_out)
 	// uhd_error uhd_usrp_set_time_now(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
 	// uhd_error uhd_usrp_set_time_next_pps(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
@@ -108,10 +132,15 @@ impl USRP {
 
 	pub fn num_mboards(&self) -> Result<usize, &'static str> {
 		let mut ans = 0;
-		match unsafe { uhd_usrp_get_num_mboards(self.handle, &mut ans) } {
-			0 => Ok(ans),
-			_ => Err("Unable to get the number of motherboards"),
-		}
+		let result = unsafe{ uhd_usrp_get_num_mboards(self.handle, &mut ans) };
+		check_err(ans, result)
+	}
+
+	pub fn get_time_now(&self, mboard:usize) -> Result<(i64, f64), &'static str> {
+		let mut full_secs_out:i64 = 0;
+		let mut frac_secs_out:f64 = 0.0;
+		let result = unsafe{ uhd_usrp_get_time_now(self.handle, mboard, &mut full_secs_out, &mut frac_secs_out) };
+		check_err((full_secs_out, frac_secs_out), result)
 	}
 
 	pub fn get_time_source(&self, mboard:usize) -> Result<String, &'static str> {

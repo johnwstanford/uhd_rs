@@ -1,4 +1,6 @@
 
+use crate::check_err;
+
 #[link(name = "uhd")]
 extern {
 
@@ -71,21 +73,16 @@ pub struct TxMetadata {
 
 impl TxMetadata {
 
-	pub fn new() -> Result<TxMetadata, &'static str> {
+	pub fn new(time_spec:Option<(i64, f64)>, start_of_burst:bool, end_of_burst:bool) -> Result<TxMetadata, &'static str> {
 		let mut handle:usize = 0;
 
-		let has_time_spec:bool = false;
-		let full_secs:i64 = 0;
-		let frac_secs:f64 = 0.0;
-		let start_of_burst:bool = true;
-		let end_of_burst:bool = false;
+		let (has_time_spec, full_secs, frac_secs) = match time_spec {
+			Some((full, frac)) => (true, full, frac),
+			None               => (false, 0, 0.0),
+		};
 
 		let result = unsafe { uhd_tx_metadata_make(&mut handle, has_time_spec, full_secs, frac_secs, start_of_burst, end_of_burst) };
-
-		match result {
-			0 => Ok(TxMetadata{ handle }),
-			_ => Err("Unable to create TxMetadata")
-		}
+		check_err(TxMetadata{ handle }, result)
 	}
 
 	pub fn has_time_spec(&self) -> Result<bool, &'static str> {

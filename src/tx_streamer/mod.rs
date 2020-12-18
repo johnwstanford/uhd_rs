@@ -4,6 +4,7 @@ use std::io::{Error, ErrorKind};
 
 use libc::{c_char, size_t};
 
+use crate::check_err;
 use crate::types::metadata::TxMetadata;
 
 type Sample = (i16, i16);
@@ -27,8 +28,7 @@ pub const DEFAULT_TIMEOUT:f64 = 3.0;
 pub struct TxStreamer {
 	handle:usize,
 	max_num_samps:usize,	// Max number of samples per buffer per packet
-	timeout:f64,
-	tx_metadata:TxMetadata
+	timeout:f64
 }
 
 impl std::io::Write for TxStreamer {
@@ -45,7 +45,7 @@ impl std::io::Write for TxStreamer {
 			let wf_s:*const Sample = wf_u as *const _;
 			let samp_buffer:&[Sample] = unsafe { std::slice::from_raw_parts(wf_s, num_samples) };
 
-			self.send_sc16(samp_buffer).map_err(|e| Error::new(ErrorKind::Interrupted, e))
+			self.send_sc16(samp_buffer, None).map_err(|e| Error::new(ErrorKind::Interrupted, e))
 
 		} else {
 			Err(Error::new(ErrorKind::Interrupted, "Wrong sized input for write()"))
@@ -65,10 +65,9 @@ impl TxStreamer {
 		if num_channels != 1 { return Err("Multiple channels in one stream aren't supported right now"); }
 
 		let mut handle:usize = 0;
-		let tx_metadata = TxMetadata::new()?;
 
 		match unsafe { uhd_tx_streamer_make(&mut handle) } {
-			0 => Ok(TxStreamer{ handle, max_num_samps:0, timeout: DEFAULT_TIMEOUT, tx_metadata}),
+			0 => Ok(TxStreamer{ handle, max_num_samps:0, timeout: DEFAULT_TIMEOUT}),
 			_ => Err("Unable to create TX streamer")
 		}
 	}
@@ -82,34 +81,43 @@ impl TxStreamer {
 		}
 	}
 
-	pub fn send_sc16(&mut self, buffer:&[Sample]) -> Result<usize, &'static str> {
+	pub fn send_sc16(&mut self, buffer:&[Sample], time_spec:Option<(i64, f64)>) -> Result<usize, &'static str> {
 
 		let mut items_sent:usize = 0;
+
+		let metadata0 = TxMetadata::new(time_spec, true,  false)?;
+		let metadata1 = TxMetadata::new(None,      false, false)?;
+		let metadata2 = TxMetadata::new(None,      false, true )?;
 
 		while items_sent < buffer.len() {
 
 			let num_samps:usize = std::cmp::min(self.max_num_samps, buffer.len() - items_sent);
+			let metadata_handle_ref:&usize = if items_sent == 0 {
+				// The first one has the time spec and the start of burst flag set
+				&metadata0.handle
+			} else if buffer.len() - items_sent > num_samps {
+				// There will be samples to send after this one
+				&metadata1.handle
+			} else {
+				// The last one has the end of burst flag set
+				&metadata2.handle
+			};
 
 			let start_ptr:*const (i16, i16) = &buffer[items_sent];
 			let buff_ptr:*const u8 = start_ptr as *const u8;
 			let mut items_sent_this_time = 0;
 			let result = unsafe { 
 				uhd_tx_streamer_send(self.handle, &buff_ptr, num_samps, 
-					&self.tx_metadata.handle, self.timeout, &mut items_sent_this_time) 
+					metadata_handle_ref, self.timeout, &mut items_sent_this_time) 
 			};
 
-			match result {
-				0 => items_sent += items_sent_this_time,
-				_ => return Err("Unable to send using TxStreamer")
-			}
+			check_err((), result)?;
+
+			items_sent += items_sent_this_time
 
 		}
 
 		Ok(items_sent)
-	}
-
-	pub fn tx_metadata_time_spec(&self) -> Result<(i64, f64), &'static str> {
-		self.tx_metadata.time_spec()
 	}
 
 	pub fn last_error(&self) -> Result<String, &'static str> {
