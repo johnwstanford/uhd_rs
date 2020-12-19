@@ -78,7 +78,7 @@ fn main() -> Result<(), &'static str> {
 
 	println!("Spawning TX thread at USRP time {:?}", usrp.get_time_now(0));
 	let tx_handle = std::thread::spawn(move || {
-		let mut buffer:[(i16, i16); 1024] = [(0, 0); 1024];
+		let mut buffer:[(i16, i16); 4096] = [(0, 0); 4096];
 
 		// Set up waveform
 		let mut phase:f64 = 0.0;
@@ -99,7 +99,7 @@ fn main() -> Result<(), &'static str> {
 				phase += dt*omega;
 			}
 
-			tx_streamer.send_sc16(&buffer, None).unwrap();
+			tx_streamer.single_coherent_pulse(&buffer, None).unwrap();
 			samps_sent += buffer.len();
 		}
 	});

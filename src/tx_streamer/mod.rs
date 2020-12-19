@@ -45,7 +45,7 @@ impl std::io::Write for TxStreamer {
 			let wf_s:*const Sample = wf_u as *const _;
 			let samp_buffer:&[Sample] = unsafe { std::slice::from_raw_parts(wf_s, num_samples) };
 
-			self.send_sc16(samp_buffer, None).map_err(|e| Error::new(ErrorKind::Interrupted, e))
+			self.single_coherent_pulse(samp_buffer, None).map_err(|e| Error::new(ErrorKind::Interrupted, e))
 
 		} else {
 			Err(Error::new(ErrorKind::Interrupted, "Wrong sized input for write()"))
@@ -81,26 +81,48 @@ impl TxStreamer {
 		}
 	}
 
-	pub fn send_sc16(&mut self, buffer:&[Sample], time_spec:Option<(i64, f64)>) -> Result<usize, &'static str> {
+	pub fn single_coherent_pulse(&mut self, buffer:&[Sample], time_spec:Option<(i64, f64)>) -> Result<usize, &'static str> {
+		// The burst boundaries seem to tell UHD that phase coherence
+		// isn't required in between bursts
+		let md0 = TxMetadata::new(time_spec, true,  false)?;
+		let md1 = TxMetadata::new(None,      false, false)?;
+		let md2 = TxMetadata::new(None,      false, true )?;
+		self.send_sc16(buffer, &md0, &md1, &md2)
+	}
+
+	pub fn start_coherent(&mut self, buffer:&[Sample], time_spec:Option<(i64, f64)>) -> Result<usize, &'static str> {
+		let md0 = TxMetadata::new(time_spec, true,  false)?;
+		let md1 = TxMetadata::new(None,      false, false)?;
+		self.send_sc16(buffer, &md0, &md1, &md1)
+	}
+
+	pub fn continue_coherent(&mut self, buffer:&[Sample]) -> Result<usize, &'static str> {
+		let md = TxMetadata::new(None, false, false)?;
+		self.send_sc16(buffer, &md, &md, &md)
+	}
+
+	pub fn complete_coherent(&mut self, buffer:&[Sample]) -> Result<usize, &'static str> {
+		let md1 = TxMetadata::new(None,      false, false)?;
+		let md2 = TxMetadata::new(None,      false, true )?;
+		self.send_sc16(buffer, &md1, &md1, &md2)
+	}
+
+	fn send_sc16(&mut self, buffer:&[Sample], md0:&TxMetadata, md1:&TxMetadata, md2:&TxMetadata) -> Result<usize, &'static str> {
 
 		let mut items_sent:usize = 0;
-
-		let metadata0 = TxMetadata::new(time_spec, true,  false)?;
-		let metadata1 = TxMetadata::new(None,      false, false)?;
-		let metadata2 = TxMetadata::new(None,      false, true )?;
 
 		while items_sent < buffer.len() {
 
 			let num_samps:usize = std::cmp::min(self.max_num_samps, buffer.len() - items_sent);
 			let metadata_handle_ref:&usize = if items_sent == 0 {
-				// The first one has the time spec and the start of burst flag set
-				&metadata0.handle
+				// First call
+				&md0.handle
 			} else if buffer.len() - items_sent > num_samps {
-				// There will be samples to send after this one
-				&metadata1.handle
+				// One of the calls in the middle
+				&md1.handle
 			} else {
-				// The last one has the end of burst flag set
-				&metadata2.handle
+				// Last call
+				&md2.handle
 			};
 
 			let start_ptr:*const (i16, i16) = &buffer[items_sent];

@@ -71,7 +71,7 @@ fn main() -> Result<(), &'static str> {
 				phase += dt*omega;
 			}
 
-			tx_streamer.send_sc16(&buffer, None).unwrap();
+			tx_streamer.single_coherent_pulse(&buffer, None).unwrap();
 			samps_sent += buffer.len();
 		}
 	});

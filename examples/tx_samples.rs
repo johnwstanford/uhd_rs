@@ -101,7 +101,7 @@ fn main() -> Result<(), &'static str> {
 		let full_secs:i64 = t as i64;
 		let frac_secs:f64 = t - (full_secs as f64);
 
-		tx_streamer.send_sc16(&buffer, Some((full_secs + t0_sec, frac_secs)))?;
+		tx_streamer.single_coherent_pulse(&buffer, Some((full_secs + t0_sec, frac_secs)))?;
 		samps_sent += buffer.len();
 	}
 	println!("Complete at {:?} USRP time", usrp.get_time_now(0));
