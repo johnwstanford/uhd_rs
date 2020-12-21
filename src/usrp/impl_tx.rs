@@ -5,7 +5,7 @@ use std::ffi::CString;
 use libc::{c_char, size_t};
 
 use crate::tx_streamer::TxStreamer;
-use crate::types::{TuneRequest, TuneResult};
+use crate::types::{TuneRequest, TuneResult, TuneRequestPolicy};
 use crate::types::string_vector::StringVector;
 use crate::types::usrp_info::Info;
 use crate::usrp::StreamArgs;
@@ -136,6 +136,19 @@ impl super::USRP {
 			0 => Ok(tune_result),
 			_ => Err("Unable to set TX freq")
 		}
+	}
+
+	pub fn set_tx_freq_auto(&mut self, freq_hz:f64, chan:usize) -> Result<TuneResult, &'static str> {
+		let args = CString::new("").unwrap();
+		let tune_request = TuneRequest {
+		    target_freq:    freq_hz,					// Target frequency for RF chain in Hz
+		    rf_freq_policy: TuneRequestPolicy::Auto, 	// RF frequency policy
+		    rf_freq: 		0.0,						// RF frequency in Hz
+		    dsp_freq_policy:TuneRequestPolicy::Auto, 	// DSP frequency policy
+		    dsp_freq:		0.0,						// DSP frequency in Hz
+		    args:args.as_ptr()							// Key-value pairs delimited by commas		
+		};
+		self.set_tx_freq(&tune_request, chan)
 	}
 
 	pub fn get_tx_freq(&self, chan:usize) -> Result<f64, &'static str> {
