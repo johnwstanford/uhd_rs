@@ -4,6 +4,7 @@ use std::io::{Error, ErrorKind};
 
 use libc::{c_char, size_t};
 
+use crate::check_err;
 use crate::types::metadata::{RxMetadata, RxMetadataErrorCode};
 use crate::usrp::StreamCmd;
 
@@ -64,13 +65,46 @@ impl RxStreamer {
 
 		match unsafe { uhd_rx_streamer_make(&mut handle) } {
 			0 => Ok(RxStreamer{ handle, max_num_samps:0,
-				timeout: 3.0, rx_metadata, overflow_count:0}),
+				timeout: 1.0, rx_metadata, overflow_count:0}),
 			_ => Err("Unable to create RX streamer")
 		}
 	}
 
 	pub fn get_handle(&self) -> usize { self.handle }
 
+	pub fn read_sc16(&mut self, buff: &mut [(i16, i16)]) -> Result<(i64, f64), &'static str> { 
+
+		let mut current_idx = 0;
+		let mut items_recvd = 0;
+
+		let mut time_spec = Err("Time spec unavailable");
+
+		while current_idx < buff.len() {
+			let result = unsafe { 
+				uhd_rx_streamer_recv(self.handle, 
+					&(&(buff[current_idx]) as *const (i16,i16) as *const u8), 		// This is a pointer to a pointer
+					std::cmp::min(self.max_num_samps, buff.len() - current_idx),	// Max number of samples to send (samples, not bytes) 
+					&self.rx_metadata.handle, 	// Pointer to metadata in which to receive results
+					self.timeout, 				// Timeout in seconds
+					false, 						// Whether or not to send a single packet; TODO: look into the effect of this
+					&mut items_recvd)			// Output variable for number of samples received
+			};
+
+			check_err((), result)?;
+
+			if current_idx == 0 {
+				// This is the first call, so this is the time spec we want to save.  We want the return value of the entire function
+				// call to be the timestamp of the first sample of the entire buffer, not a timestamp somewhere in the middle
+				time_spec = self.rx_metadata.time_spec();
+			}
+
+			current_idx += items_recvd;
+		}
+
+		time_spec
+	}
+
+	// Simple API calls
 	pub fn get_max_num_samps(&mut self) -> Result<usize, &'static str> {
 		match unsafe { uhd_rx_streamer_max_num_samps(self.handle, &mut self.max_num_samps) } {
 			0 => Ok(self.max_num_samps),
@@ -94,10 +128,6 @@ impl RxStreamer {
 				Err("RxMetadata error code other than None or Overflow")
 			}
 		}
-	}
-
-	pub fn rx_metadata_time_spec(&self) -> Result<(i64, f64), &'static str> {
-		self.rx_metadata.time_spec()
 	}
 
 	pub fn last_error(&self) -> Result<String, &'static str> {

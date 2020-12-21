@@ -1,7 +1,6 @@
 
 use std::f64::consts::PI;
 use std::ffi::CString;
-use std::io::Read;
 
 use uhd_rs::types::{TuneRequest, TuneRequestPolicy};
 use uhd_rs::usrp::USRP;
@@ -105,13 +104,15 @@ fn main() -> Result<(), &'static str> {
 	});
 
 	let mut rx_streamer = usrp.start_continuous_stream::<i16, i16>("")?;
-	let mut rx_buffer:Vec<u8> = vec![0u8; num_rx_samps * std::mem::size_of::<(i16, i16)>()];
-	rx_streamer.read_exact(&mut rx_buffer).map_err(|_| "Unable to read samples from RX streamer")?;
-	println!("Last RX Time: {:?}", rx_streamer.rx_metadata_time_spec());
+	let mut rx_buffer:Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
+	let rx_time_spec = rx_streamer.read_sc16(&mut rx_buffer).map_err(|_| "Unable to read samples from RX streamer")?;
+	println!("RX Time: {:?}", rx_time_spec);
 	println!("RX complete at USRP time {:?}", usrp.get_time_now(0));
 
 	let filename:String = format!("output_{:.2}MHz_{:.1}Msps_gain{:.1}dB_sc16.dat", rx_freq/1.0e6, rx_rate/1.0e6, rx_gain);
-	std::fs::write(&filename, &rx_buffer).map_err(|_| "Unable to save output file")?;
+	let rx_buffer_ptr:*const u8 = &rx_buffer[0] as *const (i16,i16) as *const u8;
+	let rx_bytes:&[u8] = unsafe{ std::slice::from_raw_parts(rx_buffer_ptr, rx_buffer.len() * std::mem::size_of::<(i16,i16)>()) };
+	std::fs::write(&filename, rx_bytes).map_err(|_| "Unable to save output file")?;
 
 	println!("Waiting on TX thread");
 	tx_handle.join().unwrap();
