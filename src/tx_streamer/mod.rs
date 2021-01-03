@@ -1,11 +1,13 @@
 
 use std::ffi::CString;
 use std::io::{Error, ErrorKind};
+use std::sync::{Arc, Mutex};
 
 use libc::{c_char, size_t};
 
 use crate::check_err;
 use crate::types::metadata::TxMetadata;
+use crate::usrp::{Protected, PROTECTED_ID};
 
 type Sample = (i16, i16);
 
@@ -28,6 +30,7 @@ pub const DEFAULT_TIMEOUT:f64 = 3.0;
 pub struct TxStreamer {
 	handle:usize,
 	max_num_samps:usize,	// Max number of samples per buffer per packet
+	protected:Arc<Mutex<Protected>>,
 	timeout:f64
 }
 
@@ -60,14 +63,14 @@ impl std::io::Write for TxStreamer {
 
 impl TxStreamer {
 	
-	pub fn new(num_channels:usize) -> Result<Self, &'static str> {
+	pub fn new(protected:Arc<Mutex<Protected>>, num_channels:usize) -> Result<Self, &'static str> {
 
 		if num_channels != 1 { return Err("Multiple channels in one stream aren't supported right now"); }
 
 		let mut handle:usize = 0;
 
 		match unsafe { uhd_tx_streamer_make(&mut handle) } {
-			0 => Ok(TxStreamer{ handle, max_num_samps:0, timeout: DEFAULT_TIMEOUT}),
+			0 => Ok(TxStreamer{ handle, protected, max_num_samps:0, timeout: DEFAULT_TIMEOUT}),
 			_ => Err("Unable to create TX streamer")
 		}
 	}
@@ -128,10 +131,18 @@ impl TxStreamer {
 			let start_ptr:*const (i16, i16) = &buffer[items_sent];
 			let buff_ptr:*const u8 = start_ptr as *const u8;
 			let mut items_sent_this_time = 0;
-			let result = unsafe { 
-				uhd_tx_streamer_send(self.handle, &buff_ptr, num_samps, 
-					metadata_handle_ref, self.timeout, &mut items_sent_this_time) 
+
+			let result = {
+				let guard = self.protected.lock().unwrap(); 
+				let ans = unsafe { 
+					uhd_tx_streamer_send(self.handle, &buff_ptr, num_samps, 
+						metadata_handle_ref, self.timeout, &mut items_sent_this_time) 
+				};
+
+				assert!(guard.id == PROTECTED_ID);		// Just to make sure guard doesn't somehow get dropped early
+				ans
 			};
+
 
 			check_err((), result)?;
 
