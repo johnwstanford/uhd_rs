@@ -1,12 +1,13 @@
 
 use std::ffi::CString;
 use std::io::{Error, ErrorKind};
+use std::sync::{Arc, Mutex};
 
 use libc::{c_char, size_t};
 
 use crate::check_err;
 use crate::types::metadata::{RxMetadata, RxMetadataErrorCode};
-use crate::usrp::StreamCmd;
+use crate::usrp::{Protected, StreamCmd, PROTECTED_ID};
 
 #[link(name = "uhd")]
 extern {
@@ -24,7 +25,7 @@ extern {
 pub struct RxStreamer {
 	handle:usize,
 	max_num_samps:usize,	// Max number of samples per buffer per packet
-	// buffer:[u8; BUFFER_SIZE],
+	protected:Arc<Mutex<Protected>>,
 	timeout:f64,
 	rx_metadata:RxMetadata,
 	overflow_count:usize
@@ -38,11 +39,13 @@ impl std::io::Read for RxStreamer {
 		let mut items_recvd = 0;
 
 		while current_idx < buff.len() {
-			let result = unsafe { 
+			let guard = self.protected.lock().unwrap(); 
+			let result = unsafe {
 				uhd_rx_streamer_recv(self.handle, &(&(buff[current_idx]) as *const u8), 
 					std::cmp::min(self.max_num_samps, (buff.len() - current_idx)/4), 
 					&self.rx_metadata.handle, self.timeout, false, &mut items_recvd)
 			};
+			assert!(guard.id == PROTECTED_ID);		// Just to make sure guard doesn't somehow get dropped early
 
 			if result != 0 { return Err(Error::new(ErrorKind::Interrupted, "Unable to receive from RX stream")); }
 
@@ -56,7 +59,7 @@ impl std::io::Read for RxStreamer {
 
 impl RxStreamer {
 	
-	pub fn new(num_channels:usize) -> Result<Self, &'static str> {
+	pub fn new(protected:Arc<Mutex<Protected>>, num_channels:usize) -> Result<Self, &'static str> {
 
 		if num_channels != 1 { return Err("Multiple channels in one stream aren't supported right now"); }
 
@@ -64,7 +67,7 @@ impl RxStreamer {
 		let rx_metadata = RxMetadata::new()?;
 
 		match unsafe { uhd_rx_streamer_make(&mut handle) } {
-			0 => Ok(RxStreamer{ handle, max_num_samps:0,
+			0 => Ok(RxStreamer{ handle, protected, max_num_samps:0,
 				timeout: 1.0, rx_metadata, overflow_count:0}),
 			_ => Err("Unable to create RX streamer")
 		}
@@ -80,14 +83,21 @@ impl RxStreamer {
 		let mut time_spec = Err("Time spec unavailable");
 
 		while current_idx < buff.len() {
-			let result = unsafe { 
-				uhd_rx_streamer_recv(self.handle, 
-					&(&(buff[current_idx]) as *const (i16,i16) as *const u8), 		// This is a pointer to a pointer
-					std::cmp::min(self.max_num_samps, buff.len() - current_idx),	// Max number of samples to send (samples, not bytes) 
-					&self.rx_metadata.handle, 	// Pointer to metadata in which to receive results
-					self.timeout, 				// Timeout in seconds
-					false, 						// Whether or not to send a single packet; TODO: look into the effect of this
-					&mut items_recvd)			// Output variable for number of samples received
+
+			let result = {
+				let guard = self.protected.lock().unwrap(); 
+				let ans = unsafe { 
+					uhd_rx_streamer_recv(self.handle, 
+						&(&(buff[current_idx]) as *const (i16,i16) as *const u8), 		// This is a pointer to a pointer
+						std::cmp::min(self.max_num_samps, buff.len() - current_idx),	// Max number of samples to send (samples, not bytes) 
+						&self.rx_metadata.handle, 	// Pointer to metadata in which to receive results
+						self.timeout, 				// Timeout in seconds
+						false, 						// Whether or not to send a single packet; TODO: look into the effect of this
+						&mut items_recvd)			// Output variable for number of samples received
+				};
+
+				assert!(guard.id == PROTECTED_ID);		// Just to make sure guard doesn't somehow get dropped early
+				ans
 			};
 
 			check_err((), result)?;

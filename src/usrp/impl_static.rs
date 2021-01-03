@@ -1,5 +1,7 @@
 
 use std::ffi::CString;
+use std::sync::{Arc, Mutex};
+
 use libc::c_char;
 
 use crate::types::string_vector::StringVector;
@@ -28,11 +30,12 @@ impl super::USRP {
 		let args = CString::new(args).map_err(|_| "Unable to create CString; check for null characters")?;
 
 		let mut handle:usize = 0;
+		let protected = Arc::new(Mutex::new(super::Protected::default()));
 
 		let result = unsafe { uhd_usrp_make(&mut handle, args.as_ptr()) };
 
 		match result {
-			0 => Ok(Self{ handle, last_commanded_rate:None, last_commanded_gain:None, last_commanded_bw:None }),
+			0 => Ok(Self{ handle, protected, last_commanded_rate:None, last_commanded_gain:None, last_commanded_bw:None }),
 			_ => Err("Unable to create USRP")
 		}
 

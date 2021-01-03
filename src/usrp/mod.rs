@@ -1,5 +1,6 @@
 
 use std::ffi::CString;
+use std::sync::{Arc, Mutex};
 
 use libc::{size_t, c_char};
 
@@ -77,8 +78,21 @@ extern {
 	fn uhd_usrp_free(uhd_usrp_handle: &mut usize);	
 }
 
+pub const PROTECTED_ID:usize = 0xABCD;
+
+pub struct Protected { pub id:usize }
+
+impl std::default::Default for Protected {
+
+	fn default() -> Self {
+		Self{ id:PROTECTED_ID }
+	}
+
+}
+
 pub struct USRP {
 	handle:usize,
+	protected:Arc<Mutex<Protected>>,
 	last_commanded_rate:Option<f64>,
 	last_commanded_gain:Option<f64>,
 	last_commanded_bw:Option<f64>,

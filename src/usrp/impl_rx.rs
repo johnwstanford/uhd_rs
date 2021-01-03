@@ -114,7 +114,7 @@ impl super::USRP {
 		    n_channels:1					// Number of channels
 		};
 
-		let mut rx_streamer = RxStreamer::new(stream_args.n_channels as usize)?;
+		let mut rx_streamer = RxStreamer::new(self.protected.clone(), stream_args.n_channels as usize)?;
 		if unsafe { uhd_usrp_get_rx_stream(self.handle, &stream_args, rx_streamer.get_handle()) } != 0 {
 			return Err("Unable to get an RxStream");
 		}
