@@ -71,7 +71,11 @@ impl RxStreamer {
 
 	pub fn get_handle(&self) -> usize { self.handle }
 
-	pub fn read_sc16(&mut self, buff: &mut [(i16, i16)]) -> Result<(i64, f64), &'static str> { 
+	pub fn read_sc16(&mut self, buff: &mut [(i16, i16)], timeout:Option<f64>) -> Result<(i64, f64), &'static str> { 
+		// If you're migrating code that used this function before `timeout` was added, then using `None` for this
+		// parameter will give the same behavior as before
+
+		let start_time = std::time::Instant::now();
 
 		let mut current_idx = 0;
 		let mut items_recvd = 0;
@@ -98,6 +102,15 @@ impl RxStreamer {
 			}
 
 			current_idx += items_recvd;
+
+			// If timeout is None, then there's no timeout and this function just blocks
+			// until it fills the buffer, no matter how long that takes.
+			if let Some(dt) = &timeout {
+				if start_time.elapsed().as_secs_f64() > *dt {
+					return time_spec;
+				}
+			}
+
 		}
 
 		time_spec

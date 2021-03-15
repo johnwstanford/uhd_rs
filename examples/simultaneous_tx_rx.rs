@@ -105,7 +105,7 @@ fn main() -> Result<(), &'static str> {
 
 	let mut rx_streamer = usrp.start_continuous_stream::<i16, i16>("")?;
 	let mut rx_buffer:Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
-	let rx_time_spec = rx_streamer.read_sc16(&mut rx_buffer).map_err(|_| "Unable to read samples from RX streamer")?;
+	let rx_time_spec = rx_streamer.read_sc16(&mut rx_buffer, None).map_err(|_| "Unable to read samples from RX streamer")?;
 	println!("RX Time: {:?}", rx_time_spec);
 	println!("RX complete at USRP time {:?}", usrp.get_time_now(0));
 
