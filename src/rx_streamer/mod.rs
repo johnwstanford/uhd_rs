@@ -33,22 +33,17 @@ impl std::io::Read for RxStreamer {
 
 	fn read(&mut self, buff: &mut [u8]) -> std::result::Result<usize, std::io::Error> { 
 
-		let mut current_idx = 0;
 		let mut items_recvd = 0;
 
-		while current_idx < buff.len() {
-			let result = unsafe { 
-				uhd_rx_streamer_recv(self.handle, &(&(buff[current_idx]) as *const u8), 
-					std::cmp::min(self.max_num_samps, (buff.len() - current_idx)/4), 
-					&self.rx_metadata.handle, self.timeout, false, &mut items_recvd)
-			};
+		let result = unsafe { 
+			uhd_rx_streamer_recv(self.handle, &(&(buff[0]) as *const u8), 
+				std::cmp::min(self.max_num_samps, buff.len()), 
+				&self.rx_metadata.handle, self.timeout, false, &mut items_recvd)
+		};
 
-			if result != 0 { return Err(Error::new(ErrorKind::Interrupted, "Unable to receive from RX stream")); }
+		if result != 0 { return Err(Error::new(ErrorKind::Interrupted, "Unable to receive from RX stream")); }
 
-			current_idx += items_recvd*4;
-		}
-
-		Ok(current_idx)
+		Ok(items_recvd*4)
 	}
 
 }
@@ -71,7 +66,7 @@ impl RxStreamer {
 
 	pub fn get_handle(&self) -> usize { self.handle }
 
-	pub fn read_sc16(&mut self, buff: &mut [(i16, i16)], timeout:Option<f64>) -> Result<(i64, f64), &'static str> { 
+	pub fn read_sc16(&mut self, buff: &mut [(i16, i16)], timeout:Option<f64>) -> Result<(usize, (i64, f64)), &'static str> { 
 		// If you're migrating code that used this function before `timeout` was added, then using `None` for this
 		// parameter will give the same behavior as before
 
@@ -80,7 +75,7 @@ impl RxStreamer {
 		let mut current_idx = 0;
 		let mut items_recvd = 0;
 
-		let mut time_spec = Err("Time spec unavailable");
+		let mut time_spec = (0, 0.0);
 
 		while current_idx < buff.len() {
 			let result = unsafe { 
@@ -98,7 +93,7 @@ impl RxStreamer {
 			if current_idx == 0 {
 				// This is the first call, so this is the time spec we want to save.  We want the return value of the entire function
 				// call to be the timestamp of the first sample of the entire buffer, not a timestamp somewhere in the middle
-				time_spec = self.rx_metadata.time_spec();
+				time_spec = self.rx_metadata.time_spec()?;
 			}
 
 			current_idx += items_recvd;
@@ -107,13 +102,13 @@ impl RxStreamer {
 			// until it fills the buffer, no matter how long that takes.
 			if let Some(dt) = &timeout {
 				if start_time.elapsed().as_secs_f64() > *dt {
-					return time_spec;
+					return Ok((current_idx, time_spec));
 				}
 			}
 
 		}
 
-		time_spec
+		Ok((current_idx, time_spec))
 	}
 
 	// Simple API calls
