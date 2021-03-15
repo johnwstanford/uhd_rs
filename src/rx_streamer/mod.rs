@@ -22,10 +22,9 @@ extern {
 }
 
 pub struct RxStreamer {
+	pub timeout:f64,
 	handle:usize,
 	max_num_samps:usize,	// Max number of samples per buffer per packet
-	// buffer:[u8; BUFFER_SIZE],
-	timeout:f64,
 	rx_metadata:RxMetadata,
 	overflow_count:usize
 }
