@@ -86,7 +86,7 @@ impl super::USRP {
 		Ok(rx_streamer)
 	}
 
-	fn get_rx_stream<W: Any, U: Any>(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
+	pub fn get_rx_stream<W: Any, U: Any>(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
 		// Note: This implementation assumes that you always want to create a new RxStreamer for every stream you want
 		// to create.  If you're going to be creating and destroying streams all the time, it might be more efficient to
 		// reuse instances of an RxStreamer.  If that ends up being the case, we could potentially create some kind of 
