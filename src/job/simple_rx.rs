@@ -37,7 +37,7 @@ impl Job<Vec<u8>> for SimpleRx {
 
 		self.configure(usrp)?;
 
-		let mut rx_streamer = usrp.start_continuous_stream::<i16, i16>("")?;
+		let mut rx_streamer = usrp.start_continuous_stream("")?;
 
 		let warmup_samps:usize = (self.time_warmup_sec * self.sample_rate_sps) as usize;
 		let warmup_bytes:usize = warmup_samps * 4;

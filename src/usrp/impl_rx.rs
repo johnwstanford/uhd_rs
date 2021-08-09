@@ -1,5 +1,4 @@
 
-use std::any::{Any, TypeId};
 use std::ffi::CString;
 
 use libc::{c_char, size_t};
@@ -76,9 +75,9 @@ impl super::USRP {
 		}
 	}
 
-	pub fn start_continuous_stream<W: Any, U: Any>(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
+	pub fn start_continuous_stream(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
 		
-		let mut rx_streamer = self.get_rx_stream::<W, U>(args)?;
+		let mut rx_streamer = self.get_rx_stream(args)?;
 
 		let stream_cmd_start = StreamCmd::start_continuous_now();
 		rx_streamer.stream(&stream_cmd_start)?;
@@ -86,20 +85,13 @@ impl super::USRP {
 		Ok(rx_streamer)
 	}
 
-	pub fn get_rx_stream<W: Any, U: Any>(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
+	pub fn get_rx_stream(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
 		// Note: This implementation assumes that you always want to create a new RxStreamer for every stream you want
 		// to create.  If you're going to be creating and destroying streams all the time, it might be more efficient to
 		// reuse instances of an RxStreamer.  If that ends up being the case, we could potentially create some kind of 
 		// pool of them inside the USRP struct and still provide the same abstraction to the outside
-		let otw_format = match TypeId::of::<W>() {
-			id if id == TypeId::of::<i16>() => CString::new("sc16").unwrap(),
-			_ => return Err("Unsupported type for wire format")
-		};
-		let cpu_format = match TypeId::of::<U>() {
-			id if id == TypeId::of::<i16>() => CString::new("sc16").unwrap(),
-			id if id == TypeId::of::<f32>() => CString::new("fc32").unwrap(),
-			_ => return Err("Unsupported type for CPU format")
-		};
+		let otw_format = CString::new("sc16").unwrap();
+		let cpu_format = CString::new("sc16").unwrap();
 
 		let args_cstr = CString::new(args).unwrap();
 
