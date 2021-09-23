@@ -6,26 +6,6 @@ use libc::{size_t, c_char};
 use crate::check_err;
 use crate::types::string_vector::StringVector;
 
-/*
-	Usage of time_spec_t:
-	- In StreamCmd to tell the streamer when to stream if not now (relative to the time the streamer was created?)
-	- In RxMetadata to give the time of the first sample (relative to the time the streamer was created?)
-	- In TxMetadata to give the time of the first sample (relative to the time the streamer was created?)
-	- In AsyncMetadata (not implemented in Rust yet)
-	- uhd::rfnoc::set_time_now
-	- uhd::rfnox::set_time_next_pps
-	- uhd::rfnoc::get_time_now
-	- uhd::rfnoc::get_time_last_pps
-	- FPGA control and communication (see block_ctrl_base.hpp)
-	- Generic daughterboard interface (see dboard_iface.hpp)
-	- uhd::usrp::multi_usrp::get_time_now gives "current USRP time"
-	- uhd::usrp::multi_usrp::get_time_last_pps
-	- uhd::usrp::multi_usrp::set_time_now
-	- uhd::usrp::multi_usrp::set_time_next_pps
-	- uhd::usrp::multi_usrp::set_time_unknown_pps
-	- uhd::usrp::multi_usrp::set_command_time
-*/
-
 #[link(name = "uhd")]
 extern {
 
@@ -63,7 +43,7 @@ extern {
 
 	fn uhd_usrp_get_num_mboards(h:usize, num_mboards_out:&mut size_t) -> isize;
 	
-	// uhd_error uhd_usrp_set_time_source(uhd_usrp_handle h, const char* time_source, size_t mboard)
+	fn uhd_usrp_set_time_source(h:usize, time_source:*const c_char, mboard:size_t) -> isize;
 	fn uhd_usrp_get_time_source(h:usize, mboard:size_t, time_source_out:*const c_char, strbuffer_len:size_t) -> isize;
 	fn uhd_usrp_get_time_sources(h:usize, mboard:size_t, time_sources_out:&mut usize) -> isize;
 	
@@ -155,6 +135,14 @@ impl USRP {
             _ => Err("Unable to get time source")
         }
 
+	}
+
+	pub fn set_time_source(&mut self, time_source:&str, mboard:usize) -> Result<(), &'static str> {
+		let time_source_c:CString = CString::new(time_source).unwrap();
+		match unsafe { uhd_usrp_set_time_source(self.handle, time_source_c.as_ptr(), mboard) } {
+			0 => Ok(()),
+			_ => Err("Unable to set time source")
+		}
 	}
 
 	pub fn get_time_sources(&self, mboard:usize) -> Result<Vec<String>, &'static str> {
