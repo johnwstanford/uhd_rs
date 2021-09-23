@@ -25,8 +25,7 @@ extern {
 	// uhd_error uhd_usrp_get_time_synchronized(uhd_usrp_handle h, bool *result_out)
 	// uhd_error uhd_usrp_set_command_time(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
 	// uhd_error uhd_usrp_clear_command_time(uhd_usrp_handle h, size_t mboard)
-	// uhd_error uhd_usrp_get_mboard_sensor(uhd_usrp_handle h, const char* name, size_t mboard, uhd_sensor_value_handle *sensor_value_out)
-	// uhd_error uhd_usrp_get_mboard_sensor_names(uhd_usrp_handle h, size_t mboard, uhd_string_vector_handle *mboard_sensor_names_out)
+
 	// uhd_error uhd_usrp_set_user_register(uhd_usrp_handle h, uint8_t addr, uint32_t data, size_t mboard)
 	// uhd_error uhd_usrp_get_mboard_eeprom(uhd_usrp_handle h, uhd_mboard_eeprom_handle mb_eeprom, size_t mboard)
 	// uhd_error uhd_usrp_set_mboard_eeprom(uhd_usrp_handle h, uhd_mboard_eeprom_handle mb_eeprom, size_t mboard)
@@ -104,6 +103,7 @@ impl StreamCmd {
 	
 }
 
+mod impl_sensors;
 mod impl_static;
 mod impl_rx;
 mod impl_tx;

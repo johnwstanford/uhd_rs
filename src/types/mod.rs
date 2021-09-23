@@ -2,6 +2,7 @@
 use libc::c_char;
 
 pub mod metadata;
+pub mod sensors;
 pub mod string_vector;
 pub mod usrp_info;
 
