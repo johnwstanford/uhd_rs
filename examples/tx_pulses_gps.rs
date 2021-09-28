@@ -44,6 +44,12 @@ fn main() -> Result<(), &'static str> {
         }
     }
 
+    let gps_time0 = usrp.get_mboard_sensor("gps_time", 0)?.to_int()?;
+    while gps_time0 == usrp.get_mboard_sensor("gps_time", 0)?.to_int()? {
+        // Wait for the GPS second rollover
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+
     let gps_time = usrp.get_mboard_sensor("gps_time", 0)?.to_int()?;
     usrp.set_time_next_pps(gps_time as i64 + 1, 0.0, 0)?;
 
