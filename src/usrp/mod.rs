@@ -3,7 +3,7 @@ use std::ffi::CString;
 
 use libc::{size_t, c_char};
 
-use crate::check_err;
+use crate::{check_err, UhdError};
 use crate::types::string_vector::StringVector;
 
 #[link(name = "uhd")]
@@ -16,7 +16,7 @@ extern {
 	// uhd_error uhd_usrp_get_mboard_name(uhd_usrp_handle h, size_t mboard, char* mboard_name_out, size_t strbuffer_len)
 
 	// uhd_error uhd_usrp_get_time_now(uhd_usrp_handle h, size_t mboard, int64_t *full_secs_out, double *frac_secs_out)
-	fn uhd_usrp_get_time_now(h:usize, mboard:size_t, full_secs_out:&mut i64, frac_secs_out:&mut f64) -> isize;
+	fn uhd_usrp_get_time_now(h:usize, mboard:size_t, full_secs_out:&mut i64, frac_secs_out:&mut f64) -> UhdError;
 
 	// uhd_error uhd_usrp_get_time_last_pps(uhd_usrp_handle h, size_t mboard, int64_t *full_secs_out, double *frac_secs_out)
 	// uhd_error uhd_usrp_set_time_now(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)

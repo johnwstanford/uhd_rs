@@ -32,5 +32,17 @@ fn main() -> Result<(), &'static str> {
         }
     }
 
+    println!("Waiting for reference lock and GPS lock...");
+    for _ in 0..30 {
+        let ref_locked:bool = usrp.get_mboard_sensor("ref_locked", 0)?.to_bool()?;
+        let gps_locked:bool = usrp.get_mboard_sensor("gps_locked", 0)?.to_bool()?;
+        if ref_locked && gps_locked {
+            break;
+        } else {
+            println!("GPS: {}, Ref: {}", ref_locked, gps_locked);
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
+    }
+
     Ok(())
 }
