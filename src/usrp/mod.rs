@@ -1,10 +1,13 @@
 
-use std::ffi::CString;
-
 use libc::{size_t, c_char};
 
-use crate::{check_err, UhdError};
-use crate::types::string_vector::StringVector;
+use crate::check_err;
+
+mod impl_sensors;
+mod impl_static;
+mod impl_time;
+mod impl_rx;
+mod impl_tx;
 
 #[link(name = "uhd")]
 extern {
@@ -14,17 +17,6 @@ extern {
 	// uhd_error uhd_usrp_get_master_clock_rate(uhd_usrp_handle h, size_t mboard, double *clock_rate_out)
 	// uhd_error uhd_usrp_get_pp_string(uhd_usrp_handle h, char* pp_string_out, size_t strbuffer_len)
 	// uhd_error uhd_usrp_get_mboard_name(uhd_usrp_handle h, size_t mboard, char* mboard_name_out, size_t strbuffer_len)
-
-	// uhd_error uhd_usrp_get_time_now(uhd_usrp_handle h, size_t mboard, int64_t *full_secs_out, double *frac_secs_out)
-	fn uhd_usrp_get_time_now(h:usize, mboard:size_t, full_secs_out:&mut i64, frac_secs_out:&mut f64) -> UhdError;
-
-	// uhd_error uhd_usrp_get_time_last_pps(uhd_usrp_handle h, size_t mboard, int64_t *full_secs_out, double *frac_secs_out)
-	// uhd_error uhd_usrp_set_time_now(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
-	// uhd_error uhd_usrp_set_time_next_pps(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
-	// uhd_error uhd_usrp_set_time_unknown_pps(uhd_usrp_handle h, int64_t full_secs, double frac_secs)
-	// uhd_error uhd_usrp_get_time_synchronized(uhd_usrp_handle h, bool *result_out)
-	// uhd_error uhd_usrp_set_command_time(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
-	// uhd_error uhd_usrp_clear_command_time(uhd_usrp_handle h, size_t mboard)
 
 	// uhd_error uhd_usrp_set_user_register(uhd_usrp_handle h, uint8_t addr, uint32_t data, size_t mboard)
 	// uhd_error uhd_usrp_get_mboard_eeprom(uhd_usrp_handle h, uhd_mboard_eeprom_handle mb_eeprom, size_t mboard)
@@ -42,18 +34,7 @@ extern {
 
 	fn uhd_usrp_get_num_mboards(h:usize, num_mboards_out:&mut size_t) -> isize;
 	
-	fn uhd_usrp_set_time_source(h:usize, time_source:*const c_char, mboard:size_t) -> isize;
-	fn uhd_usrp_get_time_source(h:usize, mboard:size_t, time_source_out:*const c_char, strbuffer_len:size_t) -> isize;
-	fn uhd_usrp_get_time_sources(h:usize, mboard:size_t, time_sources_out:&mut usize) -> isize;
-	
-	fn uhd_usrp_set_clock_source(h:usize, clock_source:*const c_char, mboard:size_t) -> isize;
-	fn uhd_usrp_get_clock_source(h:usize, mboard:size_t, clock_source_out:*const c_char, strbuffer_len:size_t) -> isize;
-	fn uhd_usrp_get_clock_sources(h:usize, mboard:size_t, clock_sources_out:&mut usize) -> isize;
-	
-	fn uhd_usrp_set_clock_source_out(h:usize, enb:bool, mboard:size_t) -> isize;
-	fn uhd_usrp_set_time_source_out(h:usize, enb:bool, mboard:size_t) -> isize;
-
-	fn uhd_usrp_free(uhd_usrp_handle: &mut usize);	
+	fn uhd_usrp_free(uhd_usrp_handle: &mut usize);
 }
 
 pub struct USRP {
@@ -103,98 +84,12 @@ impl StreamCmd {
 	
 }
 
-mod impl_sensors;
-mod impl_static;
-mod impl_rx;
-mod impl_tx;
-
 impl USRP {
 
 	pub fn num_mboards(&self) -> Result<usize, &'static str> {
 		let mut ans = 0;
 		let result = unsafe{ uhd_usrp_get_num_mboards(self.handle, &mut ans) };
 		check_err(ans, result)
-	}
-
-	pub fn get_time_now(&self, mboard:usize) -> Result<(i64, f64), &'static str> {
-		let mut full_secs_out:i64 = 0;
-		let mut frac_secs_out:f64 = 0.0;
-		let result = unsafe{ uhd_usrp_get_time_now(self.handle, mboard, &mut full_secs_out, &mut frac_secs_out) };
-		check_err((full_secs_out, frac_secs_out), result)
-	}
-
-	pub fn get_time_source(&self, mboard:usize) -> Result<String, &'static str> {
-		let buffer_init = "                                        ";
-		let cstr_ans:CString = CString::new(buffer_init).map_err(|_| "Unable to create CString")?;
-        match unsafe { uhd_usrp_get_time_source(self.handle, mboard, cstr_ans.as_ptr(), buffer_init.len()) } {
-            0 => {
-            	let ans:String = cstr_ans.into_string().map_err(|_| "Unable to convert CString to String")?;
-				let ans:String = ans.trim_matches(char::from(0)).to_owned();
-            	Ok(ans)
-            },
-            _ => Err("Unable to get time source")
-        }
-
-	}
-
-	pub fn set_time_source(&mut self, time_source:&str, mboard:usize) -> Result<(), &'static str> {
-		let time_source_c:CString = CString::new(time_source).unwrap();
-		match unsafe { uhd_usrp_set_time_source(self.handle, time_source_c.as_ptr(), mboard) } {
-			0 => Ok(()),
-			_ => Err("Unable to set time source")
-		}
-	}
-
-	pub fn get_time_sources(&self, mboard:usize) -> Result<Vec<String>, &'static str> {
-		let mut string_vec = StringVector::new()?;
-		match unsafe { uhd_usrp_get_time_sources(self.handle, mboard, &mut string_vec.handle) } {
-			0 => Ok(string_vec.get_rust_vec()?),
-			_ => Err("Unable to get time sources")
-		}
-	}
-
-	pub fn get_clock_source(&self, mboard:usize) -> Result<String, &'static str> {
-		let buffer_init = "                                        ";
-		let cstr_ans:CString = CString::new(buffer_init).map_err(|_| "Unable to create CString")?;
-        match unsafe { uhd_usrp_get_clock_source(self.handle, mboard, cstr_ans.as_ptr(), buffer_init.len()) } {
-            0 => {
-            	let ans:String = cstr_ans.into_string().map_err(|_| "Unable to convert CString to String")?;
-				let ans:String = ans.trim_matches(char::from(0)).to_owned();
-            	Ok(ans)
-            },
-            _ => Err("Unable to get clock source")
-        }
-
-	}
-
-	pub fn set_clock_source(&mut self, clock_source:&str, mboard:usize) -> Result<(), &'static str> {
-		let clock_source_c:CString = CString::new(clock_source).unwrap();
-		match unsafe { uhd_usrp_set_clock_source(self.handle, clock_source_c.as_ptr(), mboard) } {
-			0 => Ok(()),
-			_ => Err("Unable to set clock source")
-		}
-	}
-
-	pub fn get_clock_sources(&self, mboard:usize) -> Result<Vec<String>, &'static str> {
-		let mut string_vec = StringVector::new()?;
-		match unsafe { uhd_usrp_get_clock_sources(self.handle, mboard, &mut string_vec.handle) } {
-			0 => Ok(string_vec.get_rust_vec()?),
-			_ => Err("Unable to get clock sources")
-		}
-	}
-
-	pub fn set_clock_source_out(&mut self, mboard:usize, enb:bool) -> Result<(), &'static str> {
-		match unsafe { uhd_usrp_set_clock_source_out(self.handle, enb, mboard) } {
-			0 => Ok(()),
-			_ => Err("Unable to set clock source out")
-		}
-	}
-
-	pub fn set_time_source_out(&mut self, mboard:usize, enb:bool) -> Result<(), &'static str> {
-		match unsafe { uhd_usrp_set_time_source_out(self.handle, enb, mboard) } {
-			0 => Ok(()),
-			_ => Err("Unable to set clock source out")
-		}
 	}
 
 }
