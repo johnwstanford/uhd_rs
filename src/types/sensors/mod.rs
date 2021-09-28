@@ -59,6 +59,10 @@ impl SensorValue {
         }
     }
 
+    pub fn as_mut_ptr(&mut self) -> *mut SensorValueHandle {
+        &mut self.handle
+    }
+
     pub fn from_bool(name:&str, value:bool, repr_true:&str, repr_false:&str) -> Result<Self, &'static str> {
         let name_c = CString::new(name).map_err(|_| "Unable to represent `name` as a CString")?;
         let repr_true_c = CString::new(repr_true).map_err(|_| "Unable to represent `repr_true` as a CString")?;
