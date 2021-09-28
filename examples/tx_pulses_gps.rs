@@ -44,5 +44,15 @@ fn main() -> Result<(), &'static str> {
         }
     }
 
+    let gps_time = usrp.get_mboard_sensor("gps_time", 0)?.to_int()?;
+    usrp.set_time_next_pps(gps_time as i64 + 1, 0.0, 0)?;
+
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    let (full_secs, frac_secs) = usrp.get_time_now(0)?;
+
+    println!("GPS Time: {} [secs]", usrp.get_mboard_sensor("gps_time", 0)?.to_int()?);
+    println!("USRP Time: {} [secs]", full_secs as f64 + frac_secs);
+
     Ok(())
 }

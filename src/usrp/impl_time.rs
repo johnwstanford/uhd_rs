@@ -10,12 +10,11 @@ use crate::{check_err, UhdError};
 #[link(name = "uhd")]
 extern {
 
-    // uhd_error uhd_usrp_get_time_now(uhd_usrp_handle h, size_t mboard, int64_t *full_secs_out, double *frac_secs_out)
     fn uhd_usrp_get_time_now(h:usize, mboard:size_t, full_secs_out:&mut i64, frac_secs_out:&mut f64) -> UhdError;
 
     // uhd_error uhd_usrp_get_time_last_pps(uhd_usrp_handle h, size_t mboard, int64_t *full_secs_out, double *frac_secs_out)
     // uhd_error uhd_usrp_set_time_now(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
-    // uhd_error uhd_usrp_set_time_next_pps(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
+    fn uhd_usrp_set_time_next_pps(h:usize, full_secs:i64, frac_secs:f64, mboard:usize) -> UhdError;
     // uhd_error uhd_usrp_set_time_unknown_pps(uhd_usrp_handle h, int64_t full_secs, double frac_secs)
     // uhd_error uhd_usrp_get_time_synchronized(uhd_usrp_handle h, bool *result_out)
     // uhd_error uhd_usrp_set_command_time(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
@@ -35,6 +34,14 @@ extern {
 }
 
 impl USRP {
+
+    pub fn set_time_next_pps(&mut self, full_secs:i64, frac_secs:f64, mboard:usize) -> Result<(), &'static str> {
+        match unsafe { uhd_usrp_set_time_next_pps(self.handle, full_secs, frac_secs, mboard) } {
+            0 => Ok(()),
+            _ => Err("Unable to set next PPS time"),
+        }
+    }
+
     pub fn get_time_now(&self, mboard:usize) -> Result<(i64, f64), &'static str> {
         let mut full_secs_out:i64 = 0;
         let mut frac_secs_out:f64 = 0.0;
