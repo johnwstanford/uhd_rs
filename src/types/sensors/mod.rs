@@ -26,22 +26,22 @@ extern {
 
     fn uhd_sensor_value_make(h:*mut SensorValueHandle) -> UhdError;
     fn uhd_sensor_value_make_from_bool(h:*mut SensorValueHandle, name:*const c_char, value:bool, utrue:*const c_char, ufalse:*const c_char) -> UhdError;
-    // uhd_error uhd_sensor_value_make_from_int(uhd_sensor_value_handle* h, const char* name, int value, const char* unit, const char* formatter);
-    // uhd_error uhd_sensor_value_make_from_realnum(uhd_sensor_value_handle* h, const char* name, double value, const char* unit, const char* formatter);
-    // uhd_error uhd_sensor_value_make_from_string(uhd_sensor_value_handle* h, const char* name, const char* value, const char* unit);
+    fn uhd_sensor_value_make_from_int(h:*mut SensorValueHandle, name:*const c_char, value:i32, unit:*const c_char, formatter:*const c_char) -> UhdError;
+    fn uhd_sensor_value_make_from_realnum(h:*mut SensorValueHandle, name:*const c_char, value:f64, unit:*const c_char, formatter:*const c_char) -> UhdError;
+    fn uhd_sensor_value_make_from_string(h:*mut SensorValueHandle, name:*const c_char, value:*const c_char, unit:*const c_char) -> UhdError;
 
     fn uhd_sensor_value_free(h:*mut SensorValueHandle) -> UhdError;
 
-    // uhd_error uhd_sensor_value_to_bool(uhd_sensor_value_handle h, bool *value_out);
-    // uhd_error uhd_sensor_value_to_int(uhd_sensor_value_handle h, int *value_out);
-    // uhd_error uhd_sensor_value_to_realnum(uhd_sensor_value_handle h, double *value_out);
+    fn uhd_sensor_value_to_bool(h:SensorValueHandle, value_out:*mut bool) -> UhdError;
+    fn uhd_sensor_value_to_int(h:SensorValueHandle, value_out:*mut i32) -> UhdError;
+    fn uhd_sensor_value_to_realnum(h:SensorValueHandle, value_out:*mut f64) -> UhdError;
     fn uhd_sensor_value_name(h:SensorValueHandle, name_out:*mut u8, strbuffer_len:usize) -> UhdError;
-    // uhd_error uhd_sensor_value_value(uhd_sensor_value_handle h, char* value_out, size_t strbuffer_len);
-    // uhd_error uhd_sensor_value_unit(uhd_sensor_value_handle h, char* unit_out, size_t strbuffer_len);
-    // uhd_error uhd_sensor_value_data_type(uhd_sensor_value_handle h, uhd_sensor_value_data_type_t *data_type_out);
+    fn uhd_sensor_value_value(h:SensorValueHandle, value_out:*mut u8, strbuffer_len:usize) -> UhdError;
+    fn uhd_sensor_value_unit(h:SensorValueHandle, unit_out:*mut u8, strbuffer_len:usize) -> UhdError;
+    fn uhd_sensor_value_data_type(h:SensorValueHandle, data_type_out:*mut DataType) -> UhdError;
 
-    // uhd_error uhd_sensor_value_to_pp_string(uhd_sensor_value_handle h, char* pp_string_out, size_t strbuffer_len);
-    // uhd_error uhd_sensor_value_last_error(uhd_sensor_value_handle h, char* error_out, size_t strbuffer_len);
+    fn uhd_sensor_value_to_pp_string(h:SensorValueHandle, pp_string_out:*mut u8, strbuffer_len:usize) -> UhdError;
+    fn uhd_sensor_value_last_error(h:SensorValueHandle, error_out:*mut u8, strbuffer_len:usize) -> UhdError;
 
 }
 
@@ -70,6 +70,39 @@ impl SensorValue {
         }
     }
 
+    pub fn from_string(name:&str, value:&str, unit:&str) -> Result<Self, &'static str> {
+        let name_c = CString::new(name).map_err(|_| "Unable to represent `name` as a CString")?;
+        let value_c = CString::new(value).map_err(|_| "Unable to represent `value` as a CString")?;
+        let unit_c = CString::new(unit).map_err(|_| "Unable to represent `unit` as a CString")?;
+        let mut handle = SensorValueHandle::default();
+        match unsafe { uhd_sensor_value_make_from_string(&mut handle, name_c.as_ptr(), value_c.as_ptr(), unit_c.as_ptr()) } {
+            0 => Ok(Self{ handle }),
+            _ => Err("Nonzero return value from C API call in SensorValue::from_string")
+        }
+    }
+
+    pub fn from_int(name:&str, value:i32, unit:&str, formatter:&str) -> Result<Self, &'static str> {
+        let name_c = CString::new(name).map_err(|_| "Unable to represent `name` as a CString")?;
+        let unit_c = CString::new(unit).map_err(|_| "Unable to represent `unit` as a CString")?;
+        let formatter_c = CString::new(formatter).map_err(|_| "Unable to represent `formatter` as a CString")?;
+        let mut handle = SensorValueHandle::default();
+        match unsafe { uhd_sensor_value_make_from_int(&mut handle, name_c.as_ptr(), value, unit_c.as_ptr(), formatter_c.as_ptr()) } {
+            0 => Ok(Self{ handle }),
+            _ => Err("Nonzero return value from C API call in SensorValue::from_int")
+        }
+    }
+
+    pub fn from_realnum(name:&str, value:f64, unit:&str, formatter:&str) -> Result<Self, &'static str> {
+        let name_c = CString::new(name).map_err(|_| "Unable to represent `name` as a CString")?;
+        let unit_c = CString::new(unit).map_err(|_| "Unable to represent `unit` as a CString")?;
+        let formatter_c = CString::new(formatter).map_err(|_| "Unable to represent `formatter` as a CString")?;
+        let mut handle = SensorValueHandle::default();
+        match unsafe { uhd_sensor_value_make_from_realnum(&mut handle, name_c.as_ptr(), value, unit_c.as_ptr(), formatter_c.as_ptr()) } {
+            0 => Ok(Self{ handle }),
+            _ => Err("Nonzero return value from C API call in SensorValue::from_realnum")
+        }
+    }
+
     pub fn get_name(&self) -> Result<String, &'static str> {
         let mut buff:Vec<u8> = vec![0u8; 64];
         match unsafe { uhd_sensor_value_name(self.handle, buff.as_mut_ptr(), 64) } {
@@ -78,6 +111,82 @@ impl SensorValue {
                 Ok(String::from_utf8(nonzero).map_err(|_| "Unable to convert string returned from UHD as UTF-8")?)
             },
             _ => Err("Nonzero return value from C API call in SensorValue::get_name")
+        }
+    }
+
+    pub fn get_value(&self) -> Result<String, &'static str> {
+        let mut buff:Vec<u8> = vec![0u8; 64];
+        match unsafe { uhd_sensor_value_value(self.handle, buff.as_mut_ptr(), 64) } {
+            0 => {
+                let nonzero:Vec<u8> = buff.iter().take_while(|x| **x != 0).map(|x| *x).collect();
+                Ok(String::from_utf8(nonzero).map_err(|_| "Unable to convert string returned from UHD as UTF-8")?)
+            },
+            _ => Err("Nonzero return value from C API call in SensorValue::get_value")
+        }
+    }
+
+    pub fn get_unit(&self) -> Result<String, &'static str> {
+        let mut buff:Vec<u8> = vec![0u8; 64];
+        match unsafe { uhd_sensor_value_unit(self.handle, buff.as_mut_ptr(), 64) } {
+            0 => {
+                let nonzero:Vec<u8> = buff.iter().take_while(|x| **x != 0).map(|x| *x).collect();
+                Ok(String::from_utf8(nonzero).map_err(|_| "Unable to convert string returned from UHD as UTF-8")?)
+            },
+            _ => Err("Nonzero return value from C API call in SensorValue::get_unit")
+        }
+    }
+
+    pub fn to_pp_string(&self) -> Result<String, &'static str> {
+        let mut buff:Vec<u8> = vec![0u8; 64];
+        match unsafe { uhd_sensor_value_to_pp_string(self.handle, buff.as_mut_ptr(), 64) } {
+            0 => {
+                let nonzero:Vec<u8> = buff.iter().take_while(|x| **x != 0).map(|x| *x).collect();
+                Ok(String::from_utf8(nonzero).map_err(|_| "Unable to convert string returned from UHD as UTF-8")?)
+            },
+            _ => Err("Nonzero return value from C API call in SensorValue::to_pp_string")
+        }
+    }
+
+    pub fn last_error(&self) -> Result<String, &'static str> {
+        let mut buff:Vec<u8> = vec![0u8; 64];
+        match unsafe { uhd_sensor_value_last_error(self.handle, buff.as_mut_ptr(), 64) } {
+            0 => {
+                let nonzero:Vec<u8> = buff.iter().take_while(|x| **x != 0).map(|x| *x).collect();
+                Ok(String::from_utf8(nonzero).map_err(|_| "Unable to convert string returned from UHD as UTF-8")?)
+            },
+            _ => Err("Nonzero return value from C API call in SensorValue::last_error")
+        }
+    }
+
+    pub fn get_data_type(&self) -> Result<DataType, &'static str> {
+        let mut ans = DataType::Boolean;
+        match unsafe { uhd_sensor_value_data_type(self.handle, &mut ans) } {
+            0 => Ok(ans),
+            _ => Err("Nonzero return value from C API call in SensorValue::get_data_type"),
+        }
+    }
+
+    pub fn to_bool(&self) -> Result<bool, &'static str> {
+        let mut ans = false;
+        match unsafe { uhd_sensor_value_to_bool(self.handle, &mut ans) } {
+            0 => Ok(ans),
+            _ => Err("Nonzero return value in SensorValue::to_bool")
+        }
+    }
+
+    pub fn to_int(&self) -> Result<i32, &'static str> {
+        let mut ans = 0;
+        match unsafe { uhd_sensor_value_to_int(self.handle, &mut ans) } {
+            0 => Ok(ans),
+            _ => Err("Nonzero return value in SensorValue::to_int")
+        }
+    }
+
+    pub fn to_realnum(&self) -> Result<f64, &'static str> {
+        let mut ans = 0.0;
+        match unsafe { uhd_sensor_value_to_realnum(self.handle, &mut ans) } {
+            0 => Ok(ans),
+            _ => Err("Nonzero return value in SensorValue::to_realnum")
         }
     }
 

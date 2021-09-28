@@ -1,4 +1,4 @@
-use libc::{size_t, c_char};
+use libc::size_t;
 
 use crate::usrp::USRP;
 use crate::types::string_vector::StringVector;
