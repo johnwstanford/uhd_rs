@@ -55,7 +55,7 @@ fn main() -> Result<(), &'static str> {
 
     std::thread::sleep(std::time::Duration::from_secs(2));
 
-    let (full_secs, frac_secs) = usrp.get_time_now(0)?;
+    let (full_secs, frac_secs) = usrp.get_time_last_pps(0)?;
 
     println!("GPS Time: {} [secs]", usrp.get_mboard_sensor("gps_time", 0)?.to_int()?);
     println!("USRP Time: {} [secs]", full_secs as f64 + frac_secs);

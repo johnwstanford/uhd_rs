@@ -11,8 +11,8 @@ use crate::{check_err, UhdError};
 extern {
 
     fn uhd_usrp_get_time_now(h:usize, mboard:size_t, full_secs_out:&mut i64, frac_secs_out:&mut f64) -> UhdError;
+    fn uhd_usrp_get_time_last_pps(h:usize, mboard:usize, full_secs_out:&mut i64, frac_secs_out:&mut f64) -> UhdError;
 
-    // uhd_error uhd_usrp_get_time_last_pps(uhd_usrp_handle h, size_t mboard, int64_t *full_secs_out, double *frac_secs_out)
     // uhd_error uhd_usrp_set_time_now(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
     fn uhd_usrp_set_time_next_pps(h:usize, full_secs:i64, frac_secs:f64, mboard:usize) -> UhdError;
     // uhd_error uhd_usrp_set_time_unknown_pps(uhd_usrp_handle h, int64_t full_secs, double frac_secs)
@@ -46,6 +46,13 @@ impl USRP {
         let mut full_secs_out:i64 = 0;
         let mut frac_secs_out:f64 = 0.0;
         let result = unsafe{ uhd_usrp_get_time_now(self.handle, mboard, &mut full_secs_out, &mut frac_secs_out) };
+        check_err((full_secs_out, frac_secs_out), result)
+    }
+
+    pub fn get_time_last_pps(&self, mboard:usize) -> Result<(i64, f64), &'static str> {
+        let mut full_secs_out:i64 = 0;
+        let mut frac_secs_out:f64 = 0.0;
+        let result = unsafe{ uhd_usrp_get_time_last_pps(self.handle, mboard, &mut full_secs_out, &mut frac_secs_out) };
         check_err((full_secs_out, frac_secs_out), result)
     }
 
