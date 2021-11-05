@@ -8,11 +8,8 @@ fn check_err<T>(t:T, result:isize) -> Result<T, &'static str> {
 	}
 }
 
-// Types and functions on top of the UHD library
-pub mod job;
+pub mod io;
 
-
-// Types and functions that directly reflect the UHD library
 pub mod rx_streamer;
 pub mod tx_streamer;
 pub mod usrp;

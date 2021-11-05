@@ -3,9 +3,8 @@ use clap::{Arg, App};
 
 use uhd_rs::usrp::USRP;
 
-use uhd_rs::job::{Job, simple_rx};
-
-const DEFAULT_WARMUP_SEC:&str = "0.5";
+use uhd_rs::types::{TuneRequest, TuneRequestPolicy};
+use std::ffi::CString;
 
 fn main() -> Result<(), &'static str> {
 
@@ -17,12 +16,6 @@ fn main() -> Result<(), &'static str> {
 			.short("f").long("filename")
 			.help("Output filename")
 			.required(false).takes_value(true))
-		.arg(Arg::with_name("file_format")
-			.long("format")
-			.takes_value(true)
-			.default_value("sc16")
-			.possible_value("sc16")
-			.possible_value("fc32"))
 		.arg(Arg::with_name("sample_rate_sps")
 			.short("s").long("sample_rate_sps")
 			.takes_value(true).required(true))
@@ -31,41 +24,57 @@ fn main() -> Result<(), &'static str> {
 			.takes_value(true).required(true))
 		.arg(Arg::with_name("gain_db")
 			.long("gain_db")
-			.takes_value(true).required(true))
+			.takes_value(true))
 		.arg(Arg::with_name("args")
 			.long("args")
 			.takes_value(true))
-		.arg(Arg::with_name("warmup_time_sec")
-			.long("warmup_time_sec")
-			.help("Time to discard before capture [seconds]")
-			.takes_value(true).required(false))
 		.arg(Arg::with_name("time_sec")
 			.long("time_sec")
 			.help("Time to capture [seconds]")
 			.takes_value(true).required(true))
 		.get_matches();
 
-	let sample_rate_sps = matches.value_of("sample_rate_sps").unwrap().parse().unwrap();
+	let rx_freq = matches.value_of("freq_hz").unwrap().parse().unwrap();
+	let rx_rate = matches.value_of("sample_rate_sps").unwrap().parse().unwrap();
+	let rx_gain = matches.value_of("gain_db").unwrap_or("60.0").parse().unwrap();
+	let rx_time = matches.value_of("time_sec").unwrap().parse::<f64>().unwrap();
+	let channel = 0;
 
-	let job = simple_rx::SimpleRx {
-		sample_rate_sps, bandwidth_hz: sample_rate_sps,
-		center_freq_hz:  matches.value_of("freq_hz").unwrap().parse().unwrap(),
-		gain_db:         matches.value_of("gain_db").unwrap().parse().unwrap(),
-		time_warmup_sec: matches.value_of("warmup_time_sec").unwrap_or(DEFAULT_WARMUP_SEC).parse().unwrap(),
-		time_sec:        matches.value_of("time_sec").unwrap().parse().unwrap()
-	};
+	let num_rx_samps = (rx_time * rx_rate) as usize;
 
 	let mut usrp = USRP::new(matches.value_of("args").unwrap_or(""))?;
 
 	println!("Clock source: {}", usrp.get_clock_source(0)?);
 
-	let waveform:Vec<u8> = job.execute(&mut usrp)?;
+	// Set up RX
+	let empty_args = CString::new("").unwrap();
+
+	let tune_request = TuneRequest {
+		target_freq:    rx_freq,					// Target frequency for RF chain in Hz
+		rf_freq_policy: TuneRequestPolicy::Auto, 	// RF frequency policy
+		rf_freq: 		0.0,						// RF frequency in Hz
+		dsp_freq_policy:TuneRequestPolicy::Auto, 	// DSP frequency policy
+		dsp_freq:		0.0,						// DSP frequency in Hz
+		args:empty_args.as_ptr()					// Key-value pairs delimited by commas
+	};
+
+	usrp.set_rx_rate(rx_rate, channel)?;
+	usrp.set_rx_gain(rx_gain, channel, "")?;
+	let _rx_tune_result = usrp.set_rx_freq(&tune_request, channel)?;
+
+	println!("RX: {:.2e} [sps], {:.1} [dB], {:.3} [MHz]", usrp.get_rx_rate(channel)?, usrp.get_rx_gain(channel, "")?, usrp.get_rx_freq(channel)? / 1.0e6);
+
+	let mut rx_streamer = usrp.start_continuous_stream("")?;
+	let mut rx_buffer:Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
+	let (_, rx_time_spec) = rx_streamer.read_sc16(&mut rx_buffer, None).map_err(|_| "Unable to read samples from RX streamer")?;
+
+	println!("RX started at {:?}", rx_time_spec);
 
 	let filename = matches.value_of("filename")
 		.map(|s| s.to_owned())
-		.unwrap_or(format!("output_{}.dat", job.descriptor()));
+		.unwrap_or(format!("output_{:.2}MHz_{:.2e}sps.dat", rx_freq/1.0e6, rx_rate));
 
-	std::fs::write(filename, &waveform).map_err(|_| "Unable to save output file")?;
+	uhd_rs::io::write_sc16_to_file(filename, &rx_buffer)?;
 
  	Ok(())
 }
