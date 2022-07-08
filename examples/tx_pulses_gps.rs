@@ -1,64 +1,70 @@
-
-use std::collections::HashSet;
-
+use std::ffi::CString;
+use std::time::{Duration, Instant};
+use uhd_rs::timing;
+use uhd_rs::types::{TuneRequest, TuneRequestPolicy};
 use uhd_rs::usrp::USRP;
-use uhd_rs::types::sensors::DataType;
 
 fn main() -> Result<(), &'static str> {
     
     let mut usrp = USRP::new("")?;
 
-    let time_sources:HashSet<String> = usrp.get_time_sources(0)?.into_iter().collect();
-    let clock_sources:HashSet<String> = usrp.get_clock_sources(0)?.into_iter().collect();
-    let sensor_names:HashSet<String> = usrp.get_mboard_sensor_names(0)?.into_iter().collect();
-    assert!(time_sources.contains("gpsdo"));
-    assert!(clock_sources.contains("gpsdo"));
+    timing::sync_to_gps(&mut usrp, true)?;
 
-    usrp.set_time_source("gpsdo", 0)?;
-    usrp.set_clock_source("gpsdo", 0)?;
+    let channel = 0;
+    let tx_freq0:f64 = 2000.5e6;
+    let tx_rate:f64 = 1.0e6;
+    let tx_gain:f64 = 30.0;
+    let pulse_len_sec: f64 = 0.2;
 
-    println!("Time source: {:?}", usrp.get_time_source(0)?);
-    println!("Clock source: {:?}", usrp.get_clock_source(0)?);
-    println!("Sensor names: {:#?}", sensor_names);
+    let n_samples: usize = (tx_rate * pulse_len_sec) as usize;
+    let waveform: Vec<(i16, i16)> = vec![(2000, 0); n_samples];
 
-    for sensor in sensor_names.iter() {
-        let sensor_value = usrp.get_mboard_sensor(sensor, 0)?;
-        let sensor_type = sensor_value.get_data_type()?;
-        match sensor_type {
-            DataType::Boolean => println!("{}: {}", sensor, sensor_value.to_bool()?),
-            DataType::Integer => println!("{}: {}", sensor, sensor_value.to_int()?),
-            DataType::RealNum => println!("{}: {}", sensor, sensor_value.to_realnum()?),
-            DataType::String  => println!("{}: {}", sensor, sensor_value.get_value()?),
+    // Set up TX
+    let empty_args = CString::new("").unwrap();
+
+    let tune_request0 = TuneRequest {
+        target_freq:    tx_freq0,					// Target frequency for RF chain in Hz
+        rf_freq_policy: TuneRequestPolicy::Auto, 	// RF frequency policy
+        rf_freq: 		0.0,						// RF frequency in Hz
+        dsp_freq_policy:TuneRequestPolicy::Auto, 	// DSP frequency policy
+        dsp_freq:		0.0,						// DSP frequency in Hz
+        args:empty_args.as_ptr()					// Key-value pairs delimited by commas
+    };
+
+    usrp.set_tx_rate(tx_rate, channel)?;
+    usrp.set_tx_gain(tx_gain, channel, "")?;
+    let tx_tune_result0 = usrp.set_tx_freq(&tune_request0, channel)?;
+    println!("{:#?}", tx_tune_result0);
+
+    println!("TX: {:.2e} [sps], {:.1} [dB], {:.3} [MHz]",
+             usrp.get_tx_rate(channel)?,
+             usrp.get_tx_gain(channel, "")?,
+             usrp.get_tx_freq(channel)? / 1.0e6
+    );
+
+    let (t0_full_sec, _) = usrp.get_time_now(0)?;
+    let t0 = Instant::now();
+
+    // Create stream
+    let mut tx_streamer = usrp.get_tx_stream::<i16, i16>("")?;
+
+    // Start on a 5-second rollover
+    let t0_full_sec = t0_full_sec - (t0_full_sec % 5);
+
+    loop {
+
+        let dt = t0.elapsed();
+        let dt_next_full_sec = dt.as_secs() + 5;
+
+        tx_streamer.single_coherent_pulse(
+            &waveform,
+            Some((t0_full_sec + dt_next_full_sec as i64, 0.0))
+        )?;
+
+        let sleep_until_dt = Duration::from_secs(dt_next_full_sec) - Duration::from_millis(100);
+        while t0.elapsed() < sleep_until_dt {
+            std::thread::sleep(Duration::from_millis(10));
         }
     }
 
-    println!("Waiting for reference lock and GPS lock...");
-    for _ in 0..30 {
-        let ref_locked:bool = usrp.get_mboard_sensor("ref_locked", 0)?.to_bool()?;
-        let gps_locked:bool = usrp.get_mboard_sensor("gps_locked", 0)?.to_bool()?;
-        if ref_locked && gps_locked {
-            break;
-        } else {
-            println!("GPS: {}, Ref: {}", ref_locked, gps_locked);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-        }
-    }
-
-    let gps_time0 = usrp.get_mboard_sensor("gps_time", 0)?.to_int()?;
-    while gps_time0 == usrp.get_mboard_sensor("gps_time", 0)?.to_int()? {
-        // Wait for the GPS second rollover
-        std::thread::sleep(std::time::Duration::from_millis(10));
-    }
-
-    let gps_time = usrp.get_mboard_sensor("gps_time", 0)?.to_int()?;
-    usrp.set_time_next_pps(gps_time as i64 + 1, 0.0, 0)?;
-
-    std::thread::sleep(std::time::Duration::from_secs(2));
-
-    let (full_secs, frac_secs) = usrp.get_time_last_pps(0)?;
-
-    println!("GPS Time: {} [secs]", usrp.get_mboard_sensor("gps_time", 0)?.to_int()?);
-    println!("USRP Time: {} [secs]", full_secs as f64 + frac_secs);
-
-    Ok(())
 }
