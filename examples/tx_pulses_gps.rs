@@ -15,9 +15,16 @@ fn main() -> Result<(), &'static str> {
     let tx_rate:f64 = 1.0e6;
     let tx_gain:f64 = 30.0;
     let pulse_len_sec: f64 = 0.2;
+    let chip_width_sec: f64 = 1.0e-3;
 
-    let n_samples: usize = (tx_rate * pulse_len_sec) as usize;
-    let waveform: Vec<(i16, i16)> = vec![(2000, 0); n_samples];
+    // The chips are a way of giving the waveform some bandwidth
+    let n_total: usize = (tx_rate * pulse_len_sec) as usize;
+    let n_chip: usize = (tx_rate * chip_width_sec) as usize;
+    let mut waveform: Vec<(i16, i16)> = vec![];
+    while waveform.len() < n_total {
+        waveform.append(&mut vec![(2000, 0); n_chip]);
+        waveform.append(&mut vec![(-2000, 0); n_chip]);
+    }
 
     // Set up TX
     let empty_args = CString::new("").unwrap();
@@ -63,7 +70,7 @@ fn main() -> Result<(), &'static str> {
 
         let sleep_until_dt = Duration::from_secs(dt_next_full_sec) - Duration::from_millis(100);
         while t0.elapsed() < sleep_until_dt {
-            std::thread::sleep(Duration::from_millis(10));
+            std::thread::sleep(Duration::from_millis(100));
         }
     }
 
