@@ -36,8 +36,8 @@ fn main() -> Result<(), &'static str> {
 
     let rx_freq = matches.value_of("freq_hz").unwrap_or("95e6").parse().unwrap();
     let rx_rate = matches.value_of("sample_rate_sps").unwrap_or("10e6").parse().unwrap();
-    let rx_gain = matches.value_of("gain_db").unwrap_or("60.0").parse().unwrap();
-    let rx_time = matches.value_of("time_sec").unwrap_or("0.1").parse::<f64>().unwrap();
+    let rx_gain = matches.value_of("gain_db").unwrap_or("93.0").parse().unwrap();
+    let rx_time = matches.value_of("time_sec").unwrap_or("0.002").parse::<f64>().unwrap();
     let channel = 0;
 
     let num_rx_samps = (rx_time * rx_rate) as usize;
