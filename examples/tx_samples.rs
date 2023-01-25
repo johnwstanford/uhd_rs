@@ -74,7 +74,7 @@ fn main() -> Result<(), &'static str> {
 
 	// Create stream
 	let mut tx_streamer = usrp.get_tx_stream::<i16, i16>("")?;
-	let mut buffer:[(i16, i16); 1024] = [(0, 0); 1024];
+	let mut buffer: Vec<(i16, i16)> = vec![(0, 0); 10_000];
 
 	// Set up waveform
 	let mut phase:f64 = 0.0;
@@ -88,21 +88,24 @@ fn main() -> Result<(), &'static str> {
 	let t0_sec:i64 = 5;
 	println!("Start transmission at {} [sec] USRP time", t0_sec);
 
+	// Start with an empty buffer
+	tx_streamer.start_at_time(&buffer, (t0_sec, 0.0))?;
+
 	while samps_sent < num_samps {
+
 		let omega:f64 = mod_width_rad_per_sec * (mod_freq_rad_per_sec*t).cos();
 
-		t += dt*(buffer.len() as f64);
-
 		for i in 0..buffer.len() {
-			buffer[i] = ((phase.cos()*32768.0) as i16, (phase.sin()*32768.0) as i16);
+			buffer[i] = ((phase.cos()*2000.0) as i16, (phase.sin()*2000.0) as i16);
 			phase += dt*omega;
 		}
 
-		let full_secs:i64 = t as i64;
-		let frac_secs:f64 = t - (full_secs as f64);
+		t += dt;
 
-		tx_streamer.single_coherent_pulse(&buffer, Some((full_secs + t0_sec, frac_secs)))?;
+		tx_streamer.send_asap(&buffer)?;
+
 		samps_sent += buffer.len();
+
 	}
 	println!("Complete at {:?} USRP time", usrp.get_time_now(0));
 
