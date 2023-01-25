@@ -2,6 +2,7 @@
 use std::ffi::CString;
 
 use libc::{c_char, size_t};
+use crate::c_interop::collect_cstr;
 
 use crate::check_err;
 use crate::rx_streamer::RxStreamer;
@@ -15,7 +16,8 @@ extern {
 
 	// uhd_error uhd_usrp_set_rx_subdev_spec(uhd_usrp_handle h, uhd_subdev_spec_handle subdev_spec, size_t mboard)
 	// uhd_error uhd_usrp_get_rx_subdev_spec(uhd_usrp_handle h, size_t mboard, uhd_subdev_spec_handle subdev_spec_out)
-	// uhd_error uhd_usrp_get_rx_subdev_name(uhd_usrp_handle h, size_t chan, char* rx_subdev_name_out, size_t strbuffer_len)
+	fn uhd_usrp_get_rx_subdev_name(h: usize, chan: size_t, rx_subdev_name_out: *mut u8, strbuffer_len: size_t) -> isize;
+
 	// uhd_error uhd_usrp_get_rx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
 	// uhd_error uhd_usrp_get_fe_rx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
 	// uhd_error uhd_usrp_get_rx_lo_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *rx_lo_names_out)
@@ -59,6 +61,22 @@ extern {
 }
 
 impl super::USRP {
+
+	pub fn get_rx_subdev_name(&self, chan: usize) -> Result<String, &'static str> {
+		let mut buff: Vec<u8> = vec![0; 128];
+		unsafe {
+			let err = uhd_usrp_get_rx_subdev_name(
+				self.handle, chan,
+				buff.as_mut_ptr(), buff.len());
+
+			match err {
+				0 => Ok(collect_cstr(buff.as_ptr())),
+				_ => Err("Nonzero return value from get_rx_subdev_name"),
+			}
+
+		}
+
+	}
 
 	pub fn get_rx_bandwidth(&self, chan:usize) -> Result<f64, &'static str> {
 		let mut ans:f64 = 0.0;

@@ -44,6 +44,7 @@ fn main() -> Result<(), &'static str> {
 
     let mut usrp = USRP::new(matches.value_of("args").unwrap_or(""))?;
 
+    println!("Subdev name after init: {:?}", usrp.get_rx_subdev_name(channel)?);
     println!("Clock source: {}", usrp.get_clock_source(0)?);
 
     // Set up RX
