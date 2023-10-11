@@ -33,7 +33,10 @@ impl super::USRP {
 
 		match result {
 			0 => Ok(Self{ handle, last_commanded_rate:None, last_commanded_gain:None, last_commanded_bw:None }),
-			_ => Err("Unable to create USRP")
+			x => {
+				eprintln!("USRP Init Error: {}", x);
+				Err("Unable to create USRP")
+			}
 		}
 
 	}

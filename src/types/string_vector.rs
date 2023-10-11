@@ -41,8 +41,10 @@ impl StringVector {
 	}
 
     pub fn get_at(&self, idx:usize) -> Result<String, &'static str> {
-		let buffer_init = "                                        ";
-		let cstr_ans:CString = CString::new(buffer_init).map_err(|_| "Unable to create CString")?;
+		let buffer_init = String::from_utf8(vec![0x20; 256])
+			.map_err(|_| "Unable to create string buffer")?;
+		let cstr_ans:CString = CString::new(buffer_init.as_str())
+			.map_err(|_| "Unable to create CString")?;
         match unsafe { uhd_string_vector_at(self.handle, idx, cstr_ans.as_ptr(), buffer_init.len()) } {
             0 => {
             	let ans:String = cstr_ans.into_string().map_err(|_| "Unable to convert CString to String")?;

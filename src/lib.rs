@@ -11,6 +11,8 @@ fn check_err<T>(t:T, result:isize) -> Result<T, &'static str> {
 pub mod c_interop;
 pub mod io;
 
+pub mod error;
+
 pub mod rx_streamer;
 pub mod tx_streamer;
 pub mod usrp;

@@ -8,9 +8,9 @@ extern {
     fn uhd_subdev_spec_free(h: *mut usize) -> isize;
 
     fn uhd_subdev_spec_size(h: usize, size_out: *mut isize) -> isize;
-    /*
+    fn uhd_subdev_spec_push_back(h: usize, markup: *const c_char) -> isize;
 
-    UHD_API uhd_error uhd_subdev_spec_push_back(uhd_subdev_spec_handle h, const char* markup);
+    /*
     UHD_API uhd_error uhd_subdev_spec_at(uhd_subdev_spec_handle h, size_t num, uhd_subdev_spec_pair_t* subdev_spec_pair_out);
     UHD_API uhd_error uhd_subdev_spec_to_pp_string(uhd_subdev_spec_handle h, char* pp_string_out, size_t strbuffer_len);
     UHD_API uhd_error uhd_subdev_spec_to_string(uhd_subdev_spec_handle h, char* string_out, size_t strbuffer_len);
@@ -48,6 +48,16 @@ impl SubdevSpec {
             match uhd_subdev_spec_size(self.handle, &mut ans) {
                 0 => Ok(ans as usize),
                 _ => Err("Nonzero return value in SubdevSpec::len"),
+            }
+        }
+    }
+
+    pub fn push_back(&mut self, markup: &str) -> Result<(), &'static str> {
+        let markup_c = CString::new(markup).map_err(|_| "Unable to build CString from subdev spec markup")?;
+        unsafe {
+            match uhd_subdev_spec_push_back(self.handle, markup_c.as_ptr()) {
+                0 => Ok(()),
+                _ => Err("Nonzero return value in SubdevSpec::push_back"),
             }
         }
     }
