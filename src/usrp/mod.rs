@@ -3,6 +3,8 @@ use libc::{size_t, c_char};
 
 use crate::check_err;
 
+pub mod subdev_spec;
+
 mod impl_sensors;
 mod impl_static;
 mod impl_time;
