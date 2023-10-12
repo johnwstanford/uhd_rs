@@ -43,8 +43,14 @@ fn main() -> Result<(), &'static str> {
     let num_rx_samps = (rx_time * rx_rate) as usize;
 
     let mut usrp = USRP::new(matches.value_of("args").unwrap_or(""))?;
+    let mut rx_subdev = usrp.get_subdev_spec(0)?;
+    let n_rx_subdevs = rx_subdev.len()?;
 
-    println!("Subdev name after init: {:?}", usrp.get_rx_subdev_name(channel)?);
+    println!("Num subdevs: {} ({})", n_rx_subdevs, rx_subdev.to_string()?);
+    for i in 0..n_rx_subdevs {
+        println!("Subdev {}: {:?}", i, usrp.get_rx_subdev_name(i)?);
+    }
+
     println!("Clock source: {}", usrp.get_clock_source(0)?);
 
     // Set up RX

@@ -1,5 +1,6 @@
 use std::ffi::CString;
 use libc::c_char;
+use crate::c_interop::collect_cstr;
 
 #[link(name = "uhd")]
 extern {
@@ -13,9 +14,10 @@ extern {
     /*
     UHD_API uhd_error uhd_subdev_spec_at(uhd_subdev_spec_handle h, size_t num, uhd_subdev_spec_pair_t* subdev_spec_pair_out);
     UHD_API uhd_error uhd_subdev_spec_to_pp_string(uhd_subdev_spec_handle h, char* pp_string_out, size_t strbuffer_len);
-    UHD_API uhd_error uhd_subdev_spec_to_string(uhd_subdev_spec_handle h, char* string_out, size_t strbuffer_len);
-    UHD_API uhd_error uhd_subdev_spec_last_error(uhd_subdev_spec_handle h, char* error_out, size_t strbuffer_len);
      */
+
+    fn uhd_subdev_spec_to_string(h: usize, string_out: *mut u8, strbuffer_len: usize) -> isize;
+    fn uhd_subdev_spec_last_error(h: usize, error_out: *mut u8, strbuffer_len: usize) -> isize;
 }
 
 #[cfg(test)]
@@ -39,6 +41,28 @@ impl SubdevSpec {
                     Err("Nonzero return value from uhd_subdev_spec_make")
                 }
             }
+        }
+    }
+
+    pub fn last_error(&mut self) -> Result<String, &'static str> {
+        unsafe {
+            let mut err: Vec<u8> = vec![0x00; 128];
+            match uhd_subdev_spec_last_error(self.handle, err.as_mut_ptr(), err.len()) {
+                0 => Ok(collect_cstr(err.as_ptr())),
+                _ => Err("Failed to get last error"),
+            }
+
+        }
+    }
+
+    pub fn to_string(&mut self) -> Result<String, &'static str> {
+        unsafe {
+            let mut err: Vec<u8> = vec![0x00; 128];
+            match uhd_subdev_spec_to_string(self.handle, err.as_mut_ptr(), err.len()) {
+                0 => Ok(collect_cstr(err.as_ptr())),
+                _ => Err("Failed to get subdev spec as a string"),
+            }
+
         }
     }
 

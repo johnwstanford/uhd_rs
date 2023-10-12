@@ -10,12 +10,13 @@ use crate::types::{TuneRequest, TuneResult, TuneRequestPolicy};
 use crate::types::string_vector::StringVector;
 use crate::types::usrp_info::Info;
 use crate::usrp::{StreamArgs, StreamCmd};
+use crate::usrp::subdev_spec::SubdevSpec;
 
 #[link(name = "uhd")]
 extern {
 
 	// uhd_error uhd_usrp_set_rx_subdev_spec(uhd_usrp_handle h, uhd_subdev_spec_handle subdev_spec, size_t mboard)
-	// uhd_error uhd_usrp_get_rx_subdev_spec(uhd_usrp_handle h, size_t mboard, uhd_subdev_spec_handle subdev_spec_out)
+	fn uhd_usrp_get_rx_subdev_spec(h: usize, mboard: usize, subdev_spec_out: usize) -> isize;
 	fn uhd_usrp_get_rx_subdev_name(h: usize, chan: size_t, rx_subdev_name_out: *mut u8, strbuffer_len: size_t) -> isize;
 
 	// uhd_error uhd_usrp_get_rx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
@@ -61,6 +62,16 @@ extern {
 }
 
 impl super::USRP {
+
+	pub fn get_subdev_spec(&self, mboard: usize) -> Result<SubdevSpec, &'static str> {
+		let spec = SubdevSpec::new("A0")?;
+		unsafe {
+			match uhd_usrp_get_rx_subdev_spec(self.handle, mboard, spec.handle) {
+				0 => Ok(spec),
+				_ => Err("USRP::get_subdev_spec failed")
+			}
+		}
+	}
 
 	pub fn get_rx_subdev_name(&self, chan: usize) -> Result<String, &'static str> {
 		let mut buff: Vec<u8> = vec![0; 128];
