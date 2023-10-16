@@ -1,7 +1,7 @@
 
 use clap::{Arg, App};
 
-use uhd_rs::usrp::USRP;
+use uhd_rs::usrp::{StreamCmd, StreamMode, USRP};
 
 use uhd_rs::types::{TuneRequest, TuneRequestPolicy};
 use std::ffi::CString;
@@ -82,17 +82,35 @@ fn main() -> Result<(), &'static str> {
         );
     }
 
-    let mut rx_streamer = usrp.start_continuous_stream("")?;
-    let mut rx_buffer:Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
-    let (_, rx_time_spec) = rx_streamer.read_sc16(&mut rx_buffer, None).map_err(|_| "Unable to read samples from RX streamer")?;
+    let mut rx_streamer = usrp.get_rx_stream("", &ALL_CHANS)?;
 
-    println!("RX started at {:?}", rx_time_spec);
+    let stream_cmd_start = StreamCmd{
+        stream_mode: StreamMode::NumSampsAndDone,
+        num_samps: num_rx_samps,
+        stream_now: false,
+        time_spec_full_secs: 1,
+        time_spec_frac_secs: 0.0
+    };
+    rx_streamer.stream(&stream_cmd_start)?;
 
-    let filename = matches.value_of("filename")
-        .map(|s| s.to_owned())
-        .unwrap_or(format!("twinrx_A0_{:.2}MHz_{}dB_{}Msps.bin", rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize));
+    let mut rx_buffer0: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
+    let mut rx_buffer1: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
+    let mut rx_buffer2: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
+    let mut rx_buffer3: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
 
-    uhd_rs::io::write_sc16_to_file(filename, &rx_buffer)?;
+    let (num_samps, rx_time_spec) = rx_streamer.recv_one_multi_chan(
+        &mut [&mut rx_buffer0, &mut rx_buffer1, &mut rx_buffer2, &mut rx_buffer3]
+    )?;
+
+    println!("{} samples received at {:?}", num_samps, rx_time_spec);
+
+    for (ch, buff) in vec![("A0", &rx_buffer0), ("A1", &rx_buffer1), ("B0", &rx_buffer2), ("B1", &rx_buffer3)] {
+        let filename = matches.value_of("filename")
+            .map(|s| s.to_owned())
+            .unwrap_or(format!("twinrx_{}_{:.2}MHz_{}dB_{}Msps.bin", ch, rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize));
+
+        uhd_rs::io::write_sc16_to_file(filename, buff)?;
+    }
 
     Ok(())
 }
