@@ -106,7 +106,7 @@ impl super::USRP {
 
 	pub fn start_continuous_stream(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
 		
-		let mut rx_streamer = self.get_rx_stream(args)?;
+		let mut rx_streamer = self.get_rx_stream(args, &[0])?;
 
 		let stream_cmd_start = StreamCmd::start_continuous_now();
 		rx_streamer.stream(&stream_cmd_start)?;
@@ -114,7 +114,7 @@ impl super::USRP {
 		Ok(rx_streamer)
 	}
 
-	pub fn get_rx_stream(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
+	pub fn get_rx_stream(&mut self, args:&str, chans: &[size_t]) -> Result<RxStreamer, &'static str> {
 		// Note: This implementation assumes that you always want to create a new RxStreamer for every stream you want
 		// to create.  If you're going to be creating and destroying streams all the time, it might be more efficient to
 		// reuse instances of an RxStreamer.  If that ends up being the case, we could potentially create some kind of 
@@ -124,15 +124,12 @@ impl super::USRP {
 
 		let args_cstr = CString::new(args).unwrap();
 
-		// We only support one channel per stream right now
-		let channel = 0;
-
 		let stream_args = StreamArgs {
-		    cpu_format:cpu_format.as_ptr(),	// Format of host memory
-		    otw_format:otw_format.as_ptr(),	// Over-the-wire format		
-		    args:args_cstr.as_ptr(),		// Other stream args
-		    channel_list:&channel, 			// Array that lists channels
-		    n_channels:1					// Number of channels
+		    cpu_format:cpu_format.as_ptr(),		// Format of host memory
+		    otw_format:otw_format.as_ptr(),		// Over-the-wire format
+		    args:args_cstr.as_ptr(),			// Other stream args
+		    channel_list: chans.as_ptr(),   	// Array that lists channels
+		    n_channels: chans.len() as isize	// Number of channels
 		};
 
 		let mut rx_streamer = RxStreamer::new(stream_args.n_channels as usize)?;

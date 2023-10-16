@@ -22,11 +22,12 @@ extern {
 }
 
 pub struct RxStreamer {
-	pub timeout:f64,
-	handle:usize,
-	max_num_samps:usize,	// Max number of samples per buffer per packet
-	rx_metadata:RxMetadata,
-	overflow_count:usize
+	pub timeout: f64,
+	handle: usize,
+	max_num_samps: usize,	// Max number of samples per buffer per packet
+	rx_metadata: RxMetadata,
+	overflow_count: usize,
+	num_chans: usize,
 }
 
 impl std::io::Read for RxStreamer {
@@ -50,27 +51,32 @@ impl std::io::Read for RxStreamer {
 
 impl RxStreamer {
 	
-	pub fn new(num_channels:usize) -> Result<Self, &'static str> {
-
-		if num_channels != 1 { return Err("Multiple channels in one stream aren't supported right now"); }
+	pub fn new(num_chans:usize) -> Result<Self, &'static str> {
 
 		let mut handle:usize = 0;
 		let rx_metadata = RxMetadata::new()?;
 
 		match unsafe { uhd_rx_streamer_make(&mut handle) } {
-			0 => Ok(RxStreamer{ handle, max_num_samps:0,
-				timeout: 1.0, rx_metadata, overflow_count:0}),
+			0 => Ok(RxStreamer{
+				handle, max_num_samps:0,
+				timeout: 1.0, rx_metadata,
+				overflow_count:0, num_chans
+			}),
 			_ => Err("Unable to create RX streamer")
 		}
 	}
 
 	pub fn get_handle(&self) -> usize { self.handle }
 
-	pub fn read_sc16(&mut self, buff: &mut [(i16, i16)], timeout:Option<f64>) -> Result<(usize, (i64, f64)), &'static str> { 
+	pub fn read_sc16(&mut self, buff: &mut [(i16, i16)], timeout:Option<f64>) -> Result<(usize, (i64, f64)), &'static str> {
 		// If you're migrating code that used this function before `timeout` was added, then using `None` for this
 		// parameter will give the same behavior as before
 
 		let start_time = std::time::Instant::now();
+
+		if self.num_chans != 1 {
+			return Err("RxStreamer::read_sc16 only works with one channel");
+		}
 
 		let mut current_idx = 0;
 		let mut items_recvd = 0;

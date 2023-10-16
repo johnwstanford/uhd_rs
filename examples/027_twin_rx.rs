@@ -34,10 +34,10 @@ fn main() -> Result<(), &'static str> {
             .takes_value(true).required(false))
         .get_matches();
 
-    let rx_freq = matches.value_of("freq_hz").unwrap_or("95e6").parse().unwrap();
-    let rx_rate = matches.value_of("sample_rate_sps").unwrap_or("10e6").parse().unwrap();
+    let rx_freq = matches.value_of("freq_hz").unwrap_or("98e6").parse().unwrap();
+    let rx_rate = matches.value_of("sample_rate_sps").unwrap_or("4e6").parse().unwrap();
     let rx_gain = matches.value_of("gain_db").unwrap_or("93.0").parse().unwrap();
-    let rx_time = matches.value_of("time_sec").unwrap_or("0.002").parse::<f64>().unwrap();
+    let rx_time = matches.value_of("time_sec").unwrap_or("0.02").parse::<f64>().unwrap();
     let channel = 0;
 
     let num_rx_samps = (rx_time * rx_rate) as usize;
@@ -59,7 +59,7 @@ fn main() -> Result<(), &'static str> {
     let tune_request = TuneRequest {
         target_freq:    rx_freq,					// Target frequency for RF chain in Hz
         rf_freq_policy: TuneRequestPolicy::Auto, 	// RF frequency policy
-        rf_freq: 		0.0,						// RF frequency in Hz
+        rf_freq: 		rx_freq,	    			// RF frequency in Hz
         dsp_freq_policy:TuneRequestPolicy::Auto, 	// DSP frequency policy
         dsp_freq:		0.0,						// DSP frequency in Hz
         args:empty_args.as_ptr()					// Key-value pairs delimited by commas
@@ -79,7 +79,7 @@ fn main() -> Result<(), &'static str> {
 
     let filename = matches.value_of("filename")
         .map(|s| s.to_owned())
-        .unwrap_or(format!("output_{:.2}MHz_{:.2e}sps.dat", rx_freq/1.0e6, rx_rate));
+        .unwrap_or(format!("twinrx_A0_{:.2}MHz_{}dB_{}Msps.bin", rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize));
 
     uhd_rs::io::write_sc16_to_file(filename, &rx_buffer)?;
 
