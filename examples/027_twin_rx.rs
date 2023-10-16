@@ -53,6 +53,7 @@ fn main() -> Result<(), &'static str> {
         println!("    LOs: {:?}", usrp.get_rx_lo_names(i)?.get_rust_vec()?);
         println!("    LO SRC Options: {:?}", usrp.get_rx_lo_sources("all", i)?.get_rust_vec()?);
         println!("    LO SRC: {:?}", usrp.get_rx_lo_source("all", i)?);
+        println!("    LO Export Enabled: {:?}", usrp.get_rx_lo_export_enabled("all", i)?);
     }
 
     println!("Clock source: {}", usrp.get_clock_source(0)?);

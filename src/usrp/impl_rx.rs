@@ -23,11 +23,11 @@ extern {
 	// uhd_error uhd_usrp_get_fe_rx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
 
 	fn uhd_usrp_get_rx_lo_names(h: usize, chan: size_t, rx_lo_names_out: *mut usize) -> isize;
-	// uhd_error uhd_usrp_set_rx_lo_source(uhd_usrp_handle h, const char* src, const char* name, size_t chan)
+	fn uhd_usrp_set_rx_lo_source(h: usize, src: *const u8, name: *const u8, chan: size_t) -> isize;
 	fn uhd_usrp_get_rx_lo_source(h: usize, name: *const u8, chan: size_t, rx_lo_source_out: *mut u8, strbuffer_len: size_t) -> isize;
 	fn uhd_usrp_get_rx_lo_sources(h: usize, name: *const u8, chan: size_t, rx_lo_sources_out: *mut usize) -> isize;
-	// uhd_error uhd_usrp_set_rx_lo_export_enabled(uhd_usrp_handle h, bool enabled, const char* name, size_t chan)
-	// uhd_error uhd_usrp_get_rx_lo_export_enabled(uhd_usrp_handle h, const char* name, size_t chan, bool* result_out)
+	fn uhd_usrp_set_rx_lo_export_enabled(h: usize, enabled: bool, name: *const u8, chan: size_t) -> isize;
+	fn uhd_usrp_get_rx_lo_export_enabled(h: usize, name: *const u8, chan: size_t, result_out: *mut bool) -> isize;
 
 	// uhd_error uhd_usrp_set_rx_lo_freq(uhd_usrp_handle h, double freq, const char* name, size_t chan, double* coerced_freq_out)
 	// uhd_error uhd_usrp_get_rx_lo_freq(uhd_usrp_handle h, const char* name, size_t chan, double* rx_lo_freq_out)
@@ -64,6 +64,54 @@ extern {
 }
 
 impl super::USRP {
+
+	pub fn get_rx_lo_export_enabled(&self, name: &str, chan: usize) -> Result<bool, &'static str> {
+		let mut name_buff: Vec<u8> = vec![0; 64];
+		let mut enabled = false;
+		unsafe {
+			populate_cstr(name_buff.as_mut_ptr(), name_buff.len(), name);
+			let result = uhd_usrp_get_rx_lo_export_enabled(self.handle, name_buff.as_ptr(), chan, &mut enabled);
+			match result {
+				0 => Ok(enabled),
+				_ => {
+					eprintln!("{:?}", self.last_error());
+					Err("Unable to get LO export enabled")
+				}
+			}
+		}
+	}
+
+	pub fn set_rx_lo_export_enabled(&self, en: bool, name: &str, chan: usize) -> Result<(), &'static str> {
+		let mut name_buff: Vec<u8> = vec![0; 64];
+		unsafe {
+			populate_cstr(name_buff.as_mut_ptr(), name_buff.len(), name);
+			let result = uhd_usrp_set_rx_lo_export_enabled(self.handle, en, name_buff.as_ptr(), chan);
+			match result {
+				0 => Ok(()),
+				_ => {
+					eprintln!("{:?}", self.last_error());
+					Err("Unable to set LO export enabled")
+				}
+			}
+		}
+	}
+
+	pub fn set_rx_lo_source(&self, src: &str, name: &str, chan: usize) -> Result<(), &'static str> {
+		let mut name_buff: Vec<u8> = vec![0; 64];
+		let mut source_buff: Vec<u8> = vec![0; 64];
+		unsafe {
+			populate_cstr(name_buff.as_mut_ptr(), name_buff.len(), name);
+			populate_cstr(source_buff.as_mut_ptr(), source_buff.len(), src);
+			let result = uhd_usrp_set_rx_lo_source(self.handle, source_buff.as_ptr(), name_buff.as_ptr(), chan);
+			match result {
+				0 => Ok(()),
+				_ => {
+					eprintln!("{:?}", self.last_error());
+					Err("Unable to set LO source")
+				}
+			}
+		}
+	}
 
 	pub fn get_rx_lo_source(&self, name: &str, chan: usize) -> Result<String, &'static str> {
 		let mut name_buff: Vec<u8> = vec![0; 64];
