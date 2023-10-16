@@ -96,12 +96,7 @@ impl super::USRP {
 	}
 
 	pub fn set_rx_bandwidth(&mut self, bandwidth:f64, chan:usize) -> Result<(), &'static str> {
-		if self.last_commanded_bw == Some(bandwidth) { 
-			Ok(())
-		} else {
-			self.last_commanded_bw = Some(bandwidth);
-			check_err((), unsafe { uhd_usrp_set_rx_bandwidth(self.handle, bandwidth, chan) })		
-		}
+		check_err((), unsafe { uhd_usrp_set_rx_bandwidth(self.handle, bandwidth, chan) })
 	}
 
 	pub fn start_continuous_stream(&mut self, args:&str) -> Result<RxStreamer, &'static str> {
@@ -163,12 +158,7 @@ impl super::USRP {
 
 	// Get or set configuration values
 	pub fn set_rx_rate(&mut self, rate:f64, chan:usize) -> Result<(), &'static str> {
-		if self.last_commanded_rate == Some(rate) { 
-			Ok(())
-		} else {
-			self.last_commanded_rate = Some(rate);
-			check_err((), unsafe { uhd_usrp_set_rx_rate(self.handle, rate, chan) })			
-		}
+		check_err((), unsafe { uhd_usrp_set_rx_rate(self.handle, rate, chan) })
 	}
 
 	pub fn get_rx_rate(&self, chan:usize) -> Result<f64, &'static str> {
@@ -178,13 +168,8 @@ impl super::USRP {
 	}
 
 	pub fn set_rx_gain(&mut self, gain:f64, chan:usize, gain_name:&str) -> Result<(), &'static str> {
-		if self.last_commanded_gain == Some(gain) { 
-			Ok(()) 
-		} else {
-			self.last_commanded_gain = Some(gain);
-			let gain_name_c:CString = CString::new(gain_name).unwrap();
-			check_err((), unsafe { uhd_usrp_set_rx_gain(self.handle, gain, chan, gain_name_c.as_ptr()) })
-		}
+		let gain_name_c:CString = CString::new(gain_name).unwrap();
+		check_err((), unsafe { uhd_usrp_set_rx_gain(self.handle, gain, chan, gain_name_c.as_ptr()) })
 	}
 
 	pub fn get_rx_gain(&self, chan:usize, gain_name:&str) -> Result<f64, &'static str> {

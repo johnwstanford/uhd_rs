@@ -6,6 +6,8 @@ use uhd_rs::usrp::USRP;
 use uhd_rs::types::{TuneRequest, TuneRequestPolicy};
 use std::ffi::CString;
 
+const ALL_CHANS: [usize; 4] = [0, 1, 2, 3];
+
 fn main() -> Result<(), &'static str> {
 
     let matches = App::new("Rx Example for UHD_rs")
@@ -38,7 +40,6 @@ fn main() -> Result<(), &'static str> {
     let rx_rate = matches.value_of("sample_rate_sps").unwrap_or("4e6").parse().unwrap();
     let rx_gain = matches.value_of("gain_db").unwrap_or("93.0").parse().unwrap();
     let rx_time = matches.value_of("time_sec").unwrap_or("0.02").parse::<f64>().unwrap();
-    let channel = 0;
 
     let num_rx_samps = (rx_time * rx_rate) as usize;
 
@@ -65,11 +66,21 @@ fn main() -> Result<(), &'static str> {
         args:empty_args.as_ptr()					// Key-value pairs delimited by commas
     };
 
-    usrp.set_rx_rate(rx_rate, channel)?;
-    usrp.set_rx_gain(rx_gain, channel, "")?;
-    let _rx_tune_result = usrp.set_rx_freq(&tune_request, channel)?;
+    for channel in ALL_CHANS.iter() {
+        usrp.set_rx_rate(rx_rate, *channel)?;
+        usrp.set_rx_gain(rx_gain, *channel, "")?;
+        let rx_tune_result = usrp.set_rx_freq(&tune_request, *channel)?;
 
-    println!("RX: {:.2e} [sps], {:.1} [dB], {:.3} [MHz]", usrp.get_rx_rate(channel)?, usrp.get_rx_gain(channel, "")?, usrp.get_rx_freq(channel)? / 1.0e6);
+        let rx_rate_rb = usrp.get_rx_rate(*channel)?;
+        let rx_gain_rb = usrp.get_rx_gain(*channel, "")?;
+        let rx_freq_rb = usrp.get_rx_freq(*channel)?;
+
+        println!(
+            "CH{}: {:.2e} [sps], {:.1} [dB], {:.3} [MHz] ({} + {})",
+            channel, rx_rate_rb, rx_gain_rb, rx_freq_rb / 1.0e6,
+            rx_tune_result.actual_rf_freq, rx_tune_result.actual_dsp_freq
+        );
+    }
 
     let mut rx_streamer = usrp.start_continuous_stream("")?;
     let mut rx_buffer:Vec<(i16, i16)> = vec![(0,0); num_rx_samps];

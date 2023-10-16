@@ -40,10 +40,7 @@ extern {
 }
 
 pub struct USRP {
-	handle:usize,
-	last_commanded_rate:Option<f64>,
-	last_commanded_gain:Option<f64>,
-	last_commanded_bw:Option<f64>,
+	handle: usize,
 }
 
 #[repr(C)]
