@@ -50,6 +50,9 @@ fn main() -> Result<(), &'static str> {
     println!("Num subdevs: {} ({})", n_rx_subdevs, rx_subdev.to_string()?);
     for i in 0..n_rx_subdevs {
         println!("Subdev {}: {:?}", i, usrp.get_rx_subdev_name(i)?);
+        println!("    LOs: {:?}", usrp.get_rx_lo_names(i)?.get_rust_vec()?);
+        println!("    LO SRC Options: {:?}", usrp.get_rx_lo_sources("all", i)?.get_rust_vec()?);
+        println!("    LO SRC: {:?}", usrp.get_rx_lo_source("all", i)?);
     }
 
     println!("Clock source: {}", usrp.get_clock_source(0)?);

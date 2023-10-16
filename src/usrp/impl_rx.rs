@@ -2,7 +2,7 @@
 use std::ffi::CString;
 
 use libc::{c_char, size_t};
-use crate::c_interop::collect_cstr;
+use crate::c_interop::{collect_cstr, populate_cstr};
 
 use crate::check_err;
 use crate::rx_streamer::RxStreamer;
@@ -21,12 +21,14 @@ extern {
 
 	// uhd_error uhd_usrp_get_rx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
 	// uhd_error uhd_usrp_get_fe_rx_freq_range(uhd_usrp_handle h, size_t chan, uhd_meta_range_handle freq_range_out)
-	// uhd_error uhd_usrp_get_rx_lo_names(uhd_usrp_handle h, size_t chan, uhd_string_vector_handle *rx_lo_names_out)
+
+	fn uhd_usrp_get_rx_lo_names(h: usize, chan: size_t, rx_lo_names_out: *mut usize) -> isize;
 	// uhd_error uhd_usrp_set_rx_lo_source(uhd_usrp_handle h, const char* src, const char* name, size_t chan)
-	// uhd_error uhd_usrp_get_rx_lo_source(uhd_usrp_handle h, const char* name, size_t chan, char* rx_lo_source_out, size_t strbuffer_len)
-	// uhd_error uhd_usrp_get_rx_lo_sources(uhd_usrp_handle h, const char* name, size_t chan, uhd_string_vector_handle *rx_lo_sources_out)
+	fn uhd_usrp_get_rx_lo_source(h: usize, name: *const u8, chan: size_t, rx_lo_source_out: *mut u8, strbuffer_len: size_t) -> isize;
+	fn uhd_usrp_get_rx_lo_sources(h: usize, name: *const u8, chan: size_t, rx_lo_sources_out: *mut usize) -> isize;
 	// uhd_error uhd_usrp_set_rx_lo_export_enabled(uhd_usrp_handle h, bool enabled, const char* name, size_t chan)
 	// uhd_error uhd_usrp_get_rx_lo_export_enabled(uhd_usrp_handle h, const char* name, size_t chan, bool* result_out)
+
 	// uhd_error uhd_usrp_set_rx_lo_freq(uhd_usrp_handle h, double freq, const char* name, size_t chan, double* coerced_freq_out)
 	// uhd_error uhd_usrp_get_rx_lo_freq(uhd_usrp_handle h, const char* name, size_t chan, double* rx_lo_freq_out)
 	// uhd_error uhd_usrp_set_normalized_rx_gain(uhd_usrp_handle h, double gain, size_t chan)
@@ -62,6 +64,40 @@ extern {
 }
 
 impl super::USRP {
+
+	pub fn get_rx_lo_source(&self, name: &str, chan: usize) -> Result<String, &'static str> {
+		let mut name_buff: Vec<u8> = vec![0; 64];
+		let mut source_buff: Vec<u8> = vec![0; 64];
+		unsafe {
+			populate_cstr(name_buff.as_mut_ptr(), name_buff.len(), name);
+			let result = uhd_usrp_get_rx_lo_source(self.handle, name_buff.as_ptr(), chan, source_buff.as_mut_ptr(), source_buff.len());
+			match result {
+				0 => Ok(collect_cstr(source_buff.as_ptr())),
+				_ => {
+					eprintln!("{:?}", self.last_error());
+					Err("Unable to get LO source")
+				}
+			}
+		}
+	}
+
+	pub fn get_rx_lo_names(&self, chan: usize) -> Result<StringVector, &'static str> {
+		let mut sv = StringVector::new()?;
+		check_err((), unsafe {
+			uhd_usrp_get_rx_lo_names(self.handle, chan, &mut sv.handle)
+		})?;
+		Ok(sv)
+	}
+
+	pub fn get_rx_lo_sources(&self, name: &str, chan: usize) -> Result<StringVector, &'static str> {
+		let mut sv = StringVector::new()?;
+		let mut name_buff: Vec<u8> = vec![0; 64];
+		check_err((), unsafe {
+			populate_cstr(name_buff.as_mut_ptr(), name_buff.len(), name);
+			uhd_usrp_get_rx_lo_sources(self.handle, name_buff.as_ptr(), chan, &mut sv.handle)
+		})?;
+		Ok(sv)
+	}
 
 	pub fn get_subdev_spec(&self, mboard: usize) -> Result<SubdevSpec, &'static str> {
 		let spec = SubdevSpec::new("A0")?;

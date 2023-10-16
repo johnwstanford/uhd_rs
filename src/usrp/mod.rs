@@ -1,5 +1,6 @@
 
 use libc::{size_t, c_char};
+use crate::c_interop::collect_cstr;
 
 use crate::check_err;
 
@@ -14,7 +15,8 @@ mod impl_tx;
 #[link(name = "uhd")]
 extern {
 
-	// uhd_error uhd_usrp_last_error(uhd_usrp_handle h, char* error_out, size_t strbuffer_len)
+	fn uhd_usrp_last_error(h: usize, error_out: *mut u8, strbuffer_len: size_t) -> isize;
+
 	// uhd_error uhd_usrp_set_master_clock_rate(uhd_usrp_handle h, double rate, size_t mboard)
 	// uhd_error uhd_usrp_get_master_clock_rate(uhd_usrp_handle h, size_t mboard, double *clock_rate_out)
 	// uhd_error uhd_usrp_get_pp_string(uhd_usrp_handle h, char* pp_string_out, size_t strbuffer_len)
@@ -89,6 +91,14 @@ impl USRP {
 		let mut ans = 0;
 		let result = unsafe{ uhd_usrp_get_num_mboards(self.handle, &mut ans) };
 		check_err(ans, result)
+	}
+
+	pub fn last_error(&self) -> Result<String, &'static str> {
+		let mut buff: Vec<u8> = vec![0; 256];
+		unsafe {
+			check_err((), uhd_usrp_last_error(self.handle, buff.as_mut_ptr(), buff.len()))?;
+			Ok(collect_cstr(buff.as_ptr()))
+		}
 	}
 
 }
