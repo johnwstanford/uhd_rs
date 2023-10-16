@@ -1,6 +1,5 @@
 
 use std::ffi::CString;
-use std::io::{Error, ErrorKind};
 
 use libc::{c_char, size_t};
 
@@ -16,7 +15,7 @@ extern {
 	fn uhd_rx_streamer_make(uhd_rx_streamer_handle: &mut usize) -> isize;
 	fn uhd_rx_streamer_free(uhd_rx_streamer_handle: &mut usize) -> isize;
 	fn uhd_rx_streamer_max_num_samps(h:usize, max_num_samps_out:&mut size_t) -> isize;
-	fn uhd_rx_streamer_recv(h:usize, buffs:&*const u8, samps_per_buff:size_t, md:&usize, timeout:f64, one_packet:bool, items_recvd:&mut size_t) -> isize;
+	fn uhd_rx_streamer_recv(h:usize, buffs:*const *mut u8, samps_per_buff:size_t, md:&usize, timeout:f64, one_packet:bool, items_recvd:&mut size_t) -> isize;
 	fn uhd_rx_streamer_issue_stream_cmd(h:usize, stream_cmd:&StreamCmd) -> isize;
 	fn uhd_rx_streamer_last_error(h:usize, error_out:*const c_char, strbuffer_len:size_t) -> isize;
 }
@@ -28,25 +27,6 @@ pub struct RxStreamer {
 	rx_metadata: RxMetadata,
 	overflow_count: usize,
 	num_chans: usize,
-}
-
-impl std::io::Read for RxStreamer {
-
-	fn read(&mut self, buff: &mut [u8]) -> std::result::Result<usize, std::io::Error> { 
-
-		let mut items_recvd = 0;
-
-		let result = unsafe { 
-			uhd_rx_streamer_recv(self.handle, &(&(buff[0]) as *const u8), 
-				std::cmp::min(self.max_num_samps, buff.len()), 
-				&self.rx_metadata.handle, self.timeout, false, &mut items_recvd)
-		};
-
-		if result != 0 { return Err(Error::new(ErrorKind::Interrupted, "Unable to receive from RX stream")); }
-
-		Ok(items_recvd*4)
-	}
-
 }
 
 impl RxStreamer {
@@ -68,6 +48,31 @@ impl RxStreamer {
 
 	pub fn get_handle(&self) -> usize { self.handle }
 
+	pub fn recv_one_multi_chan(&mut self, buffs: &mut [&mut [(i16, i16)]]) -> Result<(usize, (i64, f64)), &'static str> {
+		if buffs.len() != self.num_chans {
+			return Err("Number of buffers needs to match the number of channels");
+		}
+
+		let mut items_recvd = 0;
+
+		let samps_per_buff: usize = buffs.iter().map(|slice| slice.len()).max().unwrap_or_default();
+		let buff_ptrs: Vec<*mut u8> = buffs.iter_mut().map(|slice| slice.as_mut_ptr() as *mut u8).collect();
+
+		let result = unsafe {
+			uhd_rx_streamer_recv(self.handle,
+								 buff_ptrs.as_ptr(),
+								 samps_per_buff,
+								 &self.rx_metadata.handle, 	// Pointer to metadata in which to receive results
+								 self.timeout, 				// Timeout in seconds
+								 false, 						// Whether or not to send a single packet; TODO: look into the effect of this
+								 &mut items_recvd)			// Output variable for number of samples received
+		};
+
+		check_err((), result)?;
+
+		Ok((items_recvd, self.rx_metadata.time_spec()?))
+	}
+
 	pub fn read_sc16(&mut self, buff: &mut [(i16, i16)], timeout:Option<f64>) -> Result<(usize, (i64, f64)), &'static str> {
 		// If you're migrating code that used this function before `timeout` was added, then using `None` for this
 		// parameter will give the same behavior as before
@@ -86,7 +91,7 @@ impl RxStreamer {
 		while current_idx < buff.len() {
 			let result = unsafe { 
 				uhd_rx_streamer_recv(self.handle, 
-					&(&(buff[current_idx]) as *const (i16,i16) as *const u8), 		// This is a pointer to a pointer
+					&(&mut (buff[current_idx]) as *mut (i16,i16) as *mut u8), 		// This is a pointer to a pointer
 					std::cmp::min(self.max_num_samps, buff.len() - current_idx),	// Max number of samples to send (samples, not bytes) 
 					&self.rx_metadata.handle, 	// Pointer to metadata in which to receive results
 					self.timeout, 				// Timeout in seconds
