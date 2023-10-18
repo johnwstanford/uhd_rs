@@ -10,9 +10,30 @@ import os
 import struct
 import re as regex
 
+import numpy as np
+from scipy import stats
+
 FNAME_RE = regex.compile('([^/]+)_([AB])([01])_([^M]+)MHz_(\\d+)dB_([^M]+)Msps')
 IMPL_RE = regex.compile('\\D*(\\d+)')
 MAX_SAMPLES = 200000
+
+def rotating_fit(phase_cmp):
+    best_fit = (0.0, 2*np.pi)
+    for shift_90 in range(4):
+        angles = [np.angle(x * pow(1j, shift_90)) for x in phase_cmp]
+        
+        fit = stats.norm.fit(angles)
+        if fit[1] < best_fit[1]:
+            best_fit = (fit[0] - (0.5*np.pi*shift_90), fit[1])
+
+    mu, sig = best_fit
+    while mu < -np.pi:
+        mu += 2*np.pi
+    while mu > np.pi:
+        mu -= 2*np.pi
+    
+    return (mu, sig)
+    
 
 def load_dwells(path):
 
