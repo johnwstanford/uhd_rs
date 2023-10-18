@@ -68,9 +68,9 @@ for k0, k1, sp in [('A0', 'A1', 321), ('A0', 'B0', 322), ('A1', 'B0', 323),
         phase_cmp = [wf0[i] * np.conj(wf1[i]) for i in range(N)]
         
         plt.title('%s vs %s'%(k0, k1))
-        plt.hist([np.angle(x) for x in phase_cmp], bins=75, ec='k', label=impl)
+        plt.hist([np.angle(x) for x in phase_cmp], bins=75, ec='k', alpha=0.7, label=impl)
 
-    
+    plt.xlim((-np.pi, np.pi))
     
     
         
