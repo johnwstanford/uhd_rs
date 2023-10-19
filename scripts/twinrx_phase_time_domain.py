@@ -42,7 +42,7 @@ for k0, k1 in [('A0', 'A1'), ('A0', 'B0'), ('A0', 'B1')]:
     plt.gca().fill_between(x, y_lo, y_hi, color=c, alpha=0.5)
     
 plt.legend()
-
+plt.ylabel('Relative Phase [radians]')
     
     
         

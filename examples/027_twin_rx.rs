@@ -8,7 +8,7 @@ use std::ffi::CString;
 use std::time::Duration;
 
 const ALL_CHANS: [usize; 4] = [0, 1, 2, 3];
-const DWELLS_PER_SEC: usize = 20;
+const DWELLS_PER_SEC: usize = 2;
 
 const EXPORT_CHAN: usize = 0;
 
@@ -81,11 +81,18 @@ fn main() -> Result<(), &'static str> {
         args:empty_args.as_ptr()					// Key-value pairs delimited by commas
     };
 
-    let _rx_tune_result = usrp.set_rx_freq(&tune_request, EXPORT_CHAN)?;
+    usrp.set_rx_lo_export_enabled(true, "all", EXPORT_CHAN)?;
+    usrp.set_rx_lo_source("internal", "all", EXPORT_CHAN)?;
+    usrp.set_rx_lo_source("companion", "all", EXPORT_CHAN ^ 1)?;
+    usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 2)?;
+    usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 3)?;
+
+    std::thread::sleep(Duration::from_millis(50));
 
     for channel in ALL_CHANS.iter() {
         usrp.set_rx_rate(rx_rate, *channel)?;
         usrp.set_rx_gain(rx_gain, *channel, "")?;
+        let _rx_tune_result = usrp.set_rx_freq(&tune_request, EXPORT_CHAN)?;
 
         let rx_rate_rb = usrp.get_rx_rate(*channel)?;
         let rx_gain_rb = usrp.get_rx_gain(*channel, "")?;
@@ -97,18 +104,10 @@ fn main() -> Result<(), &'static str> {
         );
     }
 
-    std::thread::sleep(Duration::from_millis(100));
-
-    usrp.set_rx_lo_export_enabled(true, "all", EXPORT_CHAN)?;
-    usrp.set_rx_lo_source("internal", "all", EXPORT_CHAN)?;
-    usrp.set_rx_lo_source("companion", "all", EXPORT_CHAN ^ 1)?;
-    usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 2)?;
-    usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 3)?;
+    std::thread::sleep(Duration::from_millis(50));
 
     for i in 0..n_rx_subdevs {
         println!("Subdev {}: {:?}", i, usrp.get_rx_subdev_name(i)?);
-        println!("    LOs: {:?}", usrp.get_rx_lo_names(i)?.get_rust_vec()?);
-        println!("    LO SRC Options: {:?}", usrp.get_rx_lo_sources("all", i)?.get_rust_vec()?);
         println!("    LO SRC: {:?}", usrp.get_rx_lo_source("all", i)?);
         println!("    LO Export Enabled: {:?}", usrp.get_rx_lo_export_enabled("all", i)?);
     }
