@@ -81,18 +81,10 @@ fn main() -> Result<(), &'static str> {
         args:empty_args.as_ptr()					// Key-value pairs delimited by commas
     };
 
-    usrp.set_rx_lo_export_enabled(true, "all", EXPORT_CHAN)?;
-    usrp.set_rx_lo_source("internal", "all", EXPORT_CHAN)?;
-    usrp.set_rx_lo_source("companion", "all", EXPORT_CHAN ^ 1)?;
-    usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 2)?;
-    usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 3)?;
-
-    std::thread::sleep(Duration::from_millis(50));
-
     for channel in ALL_CHANS.iter() {
         usrp.set_rx_rate(rx_rate, *channel)?;
         usrp.set_rx_gain(rx_gain, *channel, "")?;
-        let _rx_tune_result = usrp.set_rx_freq(&tune_request, EXPORT_CHAN)?;
+        let _rx_tune_result = usrp.set_rx_freq(&tune_request, *channel)?;
 
         let rx_rate_rb = usrp.get_rx_rate(*channel)?;
         let rx_gain_rb = usrp.get_rx_gain(*channel, "")?;
@@ -103,6 +95,14 @@ fn main() -> Result<(), &'static str> {
             channel, rx_rate_rb, rx_gain_rb, rx_freq_rb / 1.0e6,
         );
     }
+    
+    std::thread::sleep(Duration::from_millis(50));
+
+    usrp.set_rx_lo_export_enabled(true, "all", EXPORT_CHAN)?;
+    usrp.set_rx_lo_source("reimport", "all", EXPORT_CHAN)?;
+    usrp.set_rx_lo_source("companion", "all", EXPORT_CHAN ^ 1)?;
+    usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 2)?;
+    usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 3)?;
 
     std::thread::sleep(Duration::from_millis(50));
 
