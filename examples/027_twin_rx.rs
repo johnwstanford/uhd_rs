@@ -112,11 +112,7 @@ fn main() -> Result<(), &'static str> {
     usrp.set_command_time(now_full+1, now_frac, 0)?;
     for channel in ALL_CHANS.iter() {
         let _rx_tune_result = usrp.set_rx_freq(&tune_request, *channel)?;
-
-        println!(
-            "CH{}: {:.2e} [sps], {:.1} [dB], {:.3} [MHz]",
-            channel, rx_rate_rb, rx_gain_rb, rx_freq_rb / 1.0e6,
-        );
+        println!("CH{}: Timed command complete", channel);
     }
     usrp.clear_command_time(0)?;
 
