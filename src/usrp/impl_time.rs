@@ -37,8 +37,8 @@ extern {
 
 impl USRP {
 
-    pub fn set_time_unknown_pps(&mut self, full_secs:i64, frac_secs:f64, mboard:usize) -> Result<(), &'static str> {
-        match unsafe { uhd_usrp_set_time_unknown_pps(self.handle, full_secs, frac_secs, mboard) } {
+    pub fn set_time_unknown_pps(&mut self, full_secs:i64, frac_secs:f64) -> Result<(), &'static str> {
+        match unsafe { uhd_usrp_set_time_unknown_pps(self.handle, full_secs, frac_secs) } {
             0 => Ok(()),
             _ => Err("Unable to set unknown PPS time"),
         }
