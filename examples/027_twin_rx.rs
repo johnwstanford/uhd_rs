@@ -99,10 +99,26 @@ fn main() -> Result<(), &'static str> {
     std::thread::sleep(Duration::from_millis(50));
 
     usrp.set_rx_lo_export_enabled(true, "all", EXPORT_CHAN)?;
-    usrp.set_rx_lo_source("reimport", "all", EXPORT_CHAN)?;
+    usrp.set_rx_lo_source("internal", "all", EXPORT_CHAN)?;
     usrp.set_rx_lo_source("companion", "all", EXPORT_CHAN ^ 1)?;
     usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 2)?;
     usrp.set_rx_lo_source("external", "all", EXPORT_CHAN ^ 3)?;
+
+    std::thread::sleep(Duration::from_millis(50));
+
+    let (now_full, now_frac) = usrp.get_time_now(0)?;
+    println!("Time now: {} = {}", now_full, now_frac);
+    
+    usrp.set_command_time(now_full+1, now_frac, 0)?;
+    for channel in ALL_CHANS.iter() {
+        let _rx_tune_result = usrp.set_rx_freq(&tune_request, *channel)?;
+
+        println!(
+            "CH{}: {:.2e} [sps], {:.1} [dB], {:.3} [MHz]",
+            channel, rx_rate_rb, rx_gain_rb, rx_freq_rb / 1.0e6,
+        );
+    }
+    usrp.clear_command_time(0)?;
 
     std::thread::sleep(Duration::from_millis(50));
 
@@ -116,13 +132,15 @@ fn main() -> Result<(), &'static str> {
 
     let mut rx_streamer = usrp.get_rx_stream("", &ALL_CHANS)?;
 
+    let (now_full, _) = usrp.get_time_now(0)?;
+
     for i in 0..num_dwells {
 
         let stream_cmd_start = StreamCmd{
             stream_mode: StreamMode::NumSampsAndDone,
             num_samps: num_rx_samps,
             stream_now: false,
-            time_spec_full_secs: (i / DWELLS_PER_SEC) as i64 + 1,
+            time_spec_full_secs: now_full + 2 + (i / DWELLS_PER_SEC) as i64,
             time_spec_frac_secs: (i % DWELLS_PER_SEC) as f64 * (1.0 / DWELLS_PER_SEC as f64),
         };
         rx_streamer.stream(&stream_cmd_start)?;
