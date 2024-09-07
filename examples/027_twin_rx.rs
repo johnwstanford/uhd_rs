@@ -152,12 +152,14 @@ fn main() -> Result<(), &'static str> {
 
         println!("{} samples received at {:?}", num_samps, rx_time_spec);
 
-        for (ch, buff) in vec![("A0", &rx_buffer0), ("A1", &rx_buffer1), ("B0", &rx_buffer2), ("B1", &rx_buffer3)] {
-            let filename = matches.value_of("filename")
-                .map(|s| s.to_owned())
-                .unwrap_or(format!("twinrx{:04}_{}_{:.2}MHz_{}dB_{}Msps.bin", i, ch, rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize));
+        if num_samps > 0 {
+            for (ch, buff) in vec![("A0", &rx_buffer0), ("A1", &rx_buffer1), ("B0", &rx_buffer2), ("B1", &rx_buffer3)] {
+                let filename = matches.value_of("filename")
+                    .map(|s| s.to_owned())
+                    .unwrap_or(format!("twinrx{:04}_{}_{:.2}MHz_{}dB_{}Msps.bin", i, ch, rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize));
 
-            uhd_rs::io::write_sc16_to_file(filename, buff)?;
+                uhd_rs::io::write_sc16_to_file(filename, buff)?;
+            }
         }
     }
 
