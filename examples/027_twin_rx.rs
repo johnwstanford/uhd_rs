@@ -20,10 +20,6 @@ fn main() -> Result<(), &'static str> {
         .version("0.1.0")
         .author("John Stanford (johnwstanford@gmail.com)")
         .about("Records raw IQ samples to a file")
-        .arg(Arg::with_name("filename")
-            .short("f").long("filename")
-            .help("Output filename")
-            .required(false).takes_value(true))
         .arg(Arg::with_name("sample_rate_sps")
             .short("s").long("sample_rate_sps")
             .takes_value(true).required(false))
@@ -107,7 +103,7 @@ fn main() -> Result<(), &'static str> {
     std::thread::sleep(Duration::from_millis(50));
 
     let (now_full, now_frac) = usrp.get_time_now(0)?;
-    println!("Time now: {} = {}", now_full, now_frac);
+    println!("Time now: {}, {}", now_full, now_frac);
     
     usrp.set_command_time(now_full+1, now_frac, 0)?;
     for channel in ALL_CHANS.iter() {
@@ -154,10 +150,7 @@ fn main() -> Result<(), &'static str> {
 
         if num_samps > 0 {
             for (ch, buff) in vec![("A0", &rx_buffer0), ("A1", &rx_buffer1), ("B0", &rx_buffer2), ("B1", &rx_buffer3)] {
-                let filename = matches.value_of("filename")
-                    .map(|s| s.to_owned())
-                    .unwrap_or(format!("twinrx{:04}_{}_{:.2}MHz_{}dB_{}Msps.bin", i, ch, rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize));
-
+                let filename = format!("twinrx{:04}_{}_{:.2}MHz_{}dB_{}Msps.bin", i, ch, rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize);
                 uhd_rs::io::write_sc16_to_file(filename, buff)?;
             }
         }
