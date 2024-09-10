@@ -15,10 +15,12 @@ extern {
 
     // uhd_error uhd_usrp_set_time_now(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
     fn uhd_usrp_set_time_next_pps(h:usize, full_secs:i64, frac_secs:f64, mboard:usize) -> UhdError;
-    // uhd_error uhd_usrp_set_time_unknown_pps(uhd_usrp_handle h, int64_t full_secs, double frac_secs)
+    fn uhd_usrp_set_time_unknown_pps(h:usize, full_secs:i64, frac_secs:f64) -> UhdError;
+
     // uhd_error uhd_usrp_get_time_synchronized(uhd_usrp_handle h, bool *result_out)
-    // uhd_error uhd_usrp_set_command_time(uhd_usrp_handle h, int64_t full_secs, double frac_secs, size_t mboard)
-    // uhd_error uhd_usrp_clear_command_time(uhd_usrp_handle h, size_t mboard)
+    
+    fn uhd_usrp_set_command_time(h:usize, full_secs:i64, frac_secs:f64, mboard:size_t) -> UhdError;
+    fn uhd_usrp_clear_command_time(h:usize, mboard:size_t) -> UhdError;
 
     fn uhd_usrp_set_time_source(h:usize, time_source:*const c_char, mboard:size_t) -> isize;
     fn uhd_usrp_get_time_source(h:usize, mboard:size_t, time_source_out:*const c_char, strbuffer_len:size_t) -> UhdError;
@@ -34,6 +36,27 @@ extern {
 }
 
 impl USRP {
+
+    pub fn set_time_unknown_pps(&mut self, full_secs:i64, frac_secs:f64) -> Result<(), &'static str> {
+        match unsafe { uhd_usrp_set_time_unknown_pps(self.handle, full_secs, frac_secs) } {
+            0 => Ok(()),
+            _ => Err("Unable to set unknown PPS time"),
+        }
+    }
+
+    pub fn set_command_time(&mut self, full_secs:i64, frac_secs:f64, mboard:usize) -> Result<(), &'static str> {
+        match unsafe { uhd_usrp_set_command_time(self.handle, full_secs, frac_secs, mboard) } {
+            0 => Ok(()),
+            _ => Err("Unable to set command time"),
+        }
+    }
+
+    pub fn clear_command_time(&mut self, mboard:usize) -> Result<(), &'static str> {
+        match unsafe { uhd_usrp_clear_command_time(self.handle, mboard) } {
+            0 => Ok(()),
+            _ => Err("Unable to clear command time"),
+        }
+    }
 
     pub fn set_time_next_pps(&mut self, full_secs:i64, frac_secs:f64, mboard:usize) -> Result<(), &'static str> {
         match unsafe { uhd_usrp_set_time_next_pps(self.handle, full_secs, frac_secs, mboard) } {

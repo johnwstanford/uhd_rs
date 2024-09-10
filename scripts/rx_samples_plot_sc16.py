@@ -15,18 +15,17 @@ import numpy as np
 from plot_signal_summary import plot
 
 data = []
-filename = '/home/john/SDR/aviation_vhf/uhd/flight_2020_09_27/1601219410/output_127.00MHz_20.0Msps_gain60.0dB_sc16.dat'
+filename = '../output_95.00MHz_1.00e7sps.dat'
 
-N_SAMPLES = 1e6
+N_SAMPLES = 1e5
 
 _, tail = os.path.split(filename)
 tail_split = tail.split('_')
 center_freq = float(tail_split[1][:-3])*1.0e6
-rate_sps = float(tail_split[2][:-4])*1.0e6
+rate_sps = float(tail_split[2][:-4].replace('sps', ''))
 
 f_in = open(filename, 'rb')
 
-assert(tail_split[4] == 'sc16.dat')
 buffer = f_in.read(4)
 while len(buffer) == 4 and len(data) < N_SAMPLES:
     re, im = struct.unpack('hh', buffer)

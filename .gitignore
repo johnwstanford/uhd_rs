@@ -1,4 +1,7 @@
 .idea/
 target/
+scripts/__pycache__/
 
 Cargo.lock
+*.dat
+*.bin

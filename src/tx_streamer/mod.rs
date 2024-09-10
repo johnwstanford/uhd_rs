@@ -107,6 +107,17 @@ impl TxStreamer {
 		self.send_sc16(buffer, &md1, &md1, &md2)
 	}
 
+	pub fn start_at_time(&mut self, buffer:&[Sample], time_spec: (i64, f64)) -> Result<usize, &'static str> {
+		let md0 = TxMetadata::new(Some(time_spec), true, false)?;
+		let md1 = TxMetadata::new(None, false, false)?;
+		self.send_sc16(buffer, &md0, &md1, &md1)
+	}
+
+	pub fn send_asap(&mut self, buffer:&[Sample]) -> Result<usize, &'static str> {
+		let md = TxMetadata::new(None, false, false)?;
+		self.send_sc16(buffer, &md, &md, &md)
+	}
+
 	fn send_sc16(&mut self, buffer:&[Sample], md0:&TxMetadata, md1:&TxMetadata, md2:&TxMetadata) -> Result<usize, &'static str> {
 
 		let mut items_sent:usize = 0;

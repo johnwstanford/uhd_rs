@@ -72,7 +72,7 @@ fn main() -> Result<(), &'static str> {
 
 	let filename = matches.value_of("filename")
 		.map(|s| s.to_owned())
-		.unwrap_or(format!("output_{:.2}MHz_{:.2e}sps.dat", rx_freq/1.0e6, rx_rate));
+		.unwrap_or(format!("rx_A0_{:.2}MHz_{}dB_{}Msps.bin", rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize));
 
 	uhd_rs::io::write_sc16_to_file(filename, &rx_buffer)?;
 
