@@ -142,7 +142,7 @@ fn main() -> Result<(), &'static str> {
 
     if num_samps > 0 {
         for (ch, buff) in vec![("A0", &rx_buffer0), ("A1", &rx_buffer1), ("B0", &rx_buffer2), ("B1", &rx_buffer3)] {
-            let filename = format!("twinrx{:04}_{:.2}MHz_{}dB_{}Msps.bin", ch, rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize);
+            let filename = format!("twinrx_{}_{:.2}MHz_{}dB_{}Msps.bin", ch, rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize);
             uhd_rs::io::write_sc16_to_file(filename, buff)?;
         }
     }
