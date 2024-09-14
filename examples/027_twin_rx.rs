@@ -8,13 +8,10 @@ use std::ffi::CString;
 use std::time::Duration;
 
 const ALL_CHANS: [usize; 4] = [0, 1, 2, 3];
-const DWELLS_PER_SEC: usize = 2;
 
 const EXPORT_CHAN: usize = 0;
 
 fn main() -> Result<(), &'static str> {
-
-    let dwell_spacing_msg = format!("Number of dwells spaced {} [ms] apart", 1_000 / DWELLS_PER_SEC);
 
     let matches = App::new("Rx Example for UHD_rs")
         .version("0.1.0")
@@ -36,17 +33,12 @@ fn main() -> Result<(), &'static str> {
             .long("time_sec")
             .help("Time to capture [seconds]")
             .takes_value(true).required(false))
-        .arg(Arg::with_name("num_dwells")
-            .long("num_dwells")
-            .help(&dwell_spacing_msg)
-            .takes_value(true).required(false))
         .get_matches();
 
     let rx_freq = matches.value_of("freq_hz").unwrap_or("531e6").parse().unwrap();
     let rx_rate = matches.value_of("sample_rate_sps").unwrap_or("2e6").parse().unwrap();
     let rx_gain = matches.value_of("gain_db").unwrap_or("93.0").parse().unwrap();
     let rx_time = matches.value_of("time_sec").unwrap_or("0.002").parse::<f64>().unwrap();
-    let num_dwells = matches.value_of("num_dwells").unwrap_or("40").parse::<usize>().unwrap();
 
     let num_rx_samps = (rx_time * rx_rate) as usize;
 
@@ -124,35 +116,34 @@ fn main() -> Result<(), &'static str> {
 
     let mut rx_streamer = usrp.get_rx_stream("", &ALL_CHANS)?;
 
-    let (now_full, _) = usrp.get_time_now(0)?;
+    let (now_full, now_frac) = usrp.get_time_now(0)?;
 
-    for i in 0..num_dwells {
+    let stream_cmd_start = StreamCmd{
+        stream_mode: StreamMode::NumSampsAndDone,
+        num_samps: num_rx_samps,
+        stream_now: false,
+        time_spec_full_secs: now_full + 1,
+        time_spec_frac_secs: now_frac,
+    };
+    rx_streamer.stream(&stream_cmd_start)?;
 
-        let stream_cmd_start = StreamCmd{
-            stream_mode: StreamMode::NumSampsAndDone,
-            num_samps: num_rx_samps,
-            stream_now: false,
-            time_spec_full_secs: now_full + 2 + (i / DWELLS_PER_SEC) as i64,
-            time_spec_frac_secs: (i % DWELLS_PER_SEC) as f64 * (1.0 / DWELLS_PER_SEC as f64),
-        };
-        rx_streamer.stream(&stream_cmd_start)?;
+    let mut rx_buffer0: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
+    let mut rx_buffer1: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
+    let mut rx_buffer2: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
+    let mut rx_buffer3: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
 
-        let mut rx_buffer0: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
-        let mut rx_buffer1: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
-        let mut rx_buffer2: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
-        let mut rx_buffer3: Vec<(i16, i16)> = vec![(0,0); num_rx_samps];
+    std::thread::sleep(Duration::from_secs(1));
 
-        let (num_samps, rx_time_spec) = rx_streamer.recv_one_multi_chan(
-            &mut [&mut rx_buffer0, &mut rx_buffer1, &mut rx_buffer2, &mut rx_buffer3]
-        )?;
+    let (num_samps, rx_time_spec) = rx_streamer.recv_one_multi_chan(
+        &mut [&mut rx_buffer0, &mut rx_buffer1, &mut rx_buffer2, &mut rx_buffer3]
+    )?;
 
-        println!("{} samples received at {:?}", num_samps, rx_time_spec);
+    println!("{} samples received at {:?}", num_samps, rx_time_spec);
 
-        if num_samps > 0 {
-            for (ch, buff) in vec![("A0", &rx_buffer0), ("A1", &rx_buffer1), ("B0", &rx_buffer2), ("B1", &rx_buffer3)] {
-                let filename = format!("twinrx{:04}_{}_{:.2}MHz_{}dB_{}Msps.bin", i, ch, rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize);
-                uhd_rs::io::write_sc16_to_file(filename, buff)?;
-            }
+    if num_samps > 0 {
+        for (ch, buff) in vec![("A0", &rx_buffer0), ("A1", &rx_buffer1), ("B0", &rx_buffer2), ("B1", &rx_buffer3)] {
+            let filename = format!("twinrx_{}_{:.2}MHz_{}dB_{}Msps.bin", ch, rx_freq/1.0e6, rx_gain as usize, (rx_rate/1.0e6) as usize);
+            uhd_rs::io::write_sc16_to_file(filename, buff)?;
         }
     }
 
