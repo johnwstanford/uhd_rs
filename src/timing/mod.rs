@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::usrp::USRP;
 
 pub fn sync_to_gps(usrp: &mut USRP, print_status: bool) -> Result<(), &'static str> {
@@ -88,7 +88,7 @@ pub fn sync_to_external(usrp: &mut USRP, print_status: bool) -> Result<(), &'sta
             break;
         } else {
             if print_status {
-                println!("Ref: {}", gps_locked);
+                println!("Ref: {}", ref_locked);
             }
             std::thread::sleep(std::time::Duration::from_secs(1));
         }
