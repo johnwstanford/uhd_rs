@@ -95,7 +95,7 @@ pub fn sync_to_external(usrp: &mut USRP, print_status: bool) -> Result<(), &'sta
     }
 
     // Set to Unix time
-    let t = || SystemTime::new().duration_since(UNIX_EPOCH).unwrap().as_secs_f64();
+    let t = || SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs_f64();
     let t_frac = || {
         let t_now: f64 = t();
         t_now - t_now.floor()
@@ -109,17 +109,12 @@ pub fn sync_to_external(usrp: &mut USRP, print_status: bool) -> Result<(), &'sta
     std::thread::sleep(std::time::Duration::from_secs(2));
 
     // Check times
-    let gps_time = usrp.get_mboard_sensor("gps_time", 0)?.to_int()?;
     let time_last_pps = usrp.get_time_last_pps(0)?;
 
     if print_status {
-        println!("GPS Time: {:?}", gps_time);
+        println!("Host Unix Time: {:?}", t());
         println!("USRP Time: {:?}", time_last_pps);
     }
 
-    if gps_time != time_last_pps.0 as i32 {
-        Err("USRP and UTC time expected to be synched but aren't")
-    } else {
-        Ok(())
-    }
+    Ok(())
 }
