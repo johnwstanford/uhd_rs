@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::time::{Duration, SystemTime};
 use crate::usrp::USRP;
 
 pub fn sync_to_gps(usrp: &mut USRP, print_status: bool) -> Result<(), &'static str> {
@@ -40,6 +41,69 @@ pub fn sync_to_gps(usrp: &mut USRP, print_status: bool) -> Result<(), &'static s
     // provided by GPS
     let gps_time = usrp.get_mboard_sensor("gps_time", 0)?.to_int()?;
     usrp.set_time_next_pps(gps_time as i64 + 1, 0.0, 0)?;
+
+    // Wait for it to apply
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    // Check times
+    let gps_time = usrp.get_mboard_sensor("gps_time", 0)?.to_int()?;
+    let time_last_pps = usrp.get_time_last_pps(0)?;
+
+    if print_status {
+        println!("GPS Time: {:?}", gps_time);
+        println!("USRP Time: {:?}", time_last_pps);
+    }
+
+    if gps_time != time_last_pps.0 as i32 {
+        Err("USRP and UTC time expected to be synched but aren't")
+    } else {
+        Ok(())
+    }
+}
+
+pub fn sync_to_external(usrp: &mut USRP, print_status: bool) -> Result<(), &'static str> {
+
+    let time_sources:HashSet<String> = usrp.get_time_sources(0)?.into_iter().collect();
+    let clock_sources:HashSet<String> = usrp.get_clock_sources(0)?.into_iter().collect();
+    let sensor_names:HashSet<String> = usrp.get_mboard_sensor_names(0)?.into_iter().collect();
+
+    if !time_sources.contains("external") || !clock_sources.contains("external") {
+        return Err("External source not available");
+    }
+
+    if !sensor_names.contains("ref_locked") {
+        return Err("Sensors expected to include ref_locked");
+    }
+
+    usrp.set_time_source("external", 0)?;
+    usrp.set_clock_source("external", 0)?;
+
+    if print_status {
+        println!("Waiting for external reference lock ...");
+    }
+
+    for _ in 0..30 {
+        let ref_locked:bool = usrp.get_mboard_sensor("ref_locked", 0)?.to_bool()?;
+        if ref_locked {
+            break;
+        } else {
+            if print_status {
+                println!("Ref: {}", gps_locked);
+            }
+            std::thread::sleep(std::time::Duration::from_secs(1));
+        }
+    }
+
+    // Set to Unix time
+    let t = || SystemTime::new().duration_since(UNIX_EPOCH).unwrap().as_secs_f64();
+    let t_frac = || {
+        let t_now: f64 = t();
+        t_now - t_now.floor()
+    };
+    while t_frac() < 0.4 || 0.6 < t_frac() {
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    usrp.set_time_next_pps(t().ceil() as i64, 0.0, 0)?;
 
     // Wait for it to apply
     std::thread::sleep(std::time::Duration::from_secs(2));
