@@ -100,7 +100,7 @@ pub fn sync_to_external(usrp: &mut USRP, print_status: bool) -> Result<(), &'sta
         let t_now: f64 = t();
         t_now - t_now.floor()
     };
-    while t_frac() < 0.4 || 0.6 < t_frac() {
+    while t_frac() < 0.3 || 0.7 < t_frac() {
         std::thread::sleep(Duration::from_millis(5));
     }
     usrp.set_time_next_pps(t().ceil() as i64, 0.0, 0)?;
