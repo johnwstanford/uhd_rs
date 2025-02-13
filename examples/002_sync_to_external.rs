@@ -1,8 +1,6 @@
-use std::collections::HashSet;
 use uhd_rs::timing;
 
 use uhd_rs::usrp::USRP;
-use uhd_rs::types::sensors::DataType;
 
 fn main() -> Result<(), &'static str> {
 
